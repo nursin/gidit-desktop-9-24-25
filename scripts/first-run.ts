@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import { fileURLToPath } from 'url'
 
 /**
  * first-run.ts
@@ -12,9 +11,6 @@ import { fileURLToPath } from 'url'
  * purposes of this demonstration we simply create placeholder folders and
  * files.  The script is written in TypeScript and executed via ts-node.
  */
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 async function ensureResources() {
   const root = path.resolve(__dirname, '..')

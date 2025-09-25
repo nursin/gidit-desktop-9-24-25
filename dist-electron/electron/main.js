@@ -1,46 +1,50 @@
-import { app, BrowserWindow, nativeImage, protocol } from 'electron';
-import { existsSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import './ipc/db.ipc.js';
-import './ipc/ai.ipc.js';
-import './ipc/sys.ipc.js';
-import '../scripts/first-run.js';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-process.env.APP_ROOT = path.join(__dirname, '..');
-export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
-export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist/renderer');
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
-    ? path.join(process.env.APP_ROOT, 'renderer/public')
-    : RENDERER_DIST;
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RENDERER_DIST = exports.MAIN_DIST = exports.VITE_DEV_SERVER_URL = void 0;
+const electron_1 = require("electron");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+require("./ipc/db.ipc.js");
+require("./ipc/ai.ipc.js");
+require("./ipc/sys.ipc.js");
+require("../scripts/first-run.js");
+const resolvedDir = __dirname;
+process.env.APP_ROOT = path_1.default.join(resolvedDir, '..');
+exports.VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
+exports.MAIN_DIST = path_1.default.join(process.env.APP_ROOT, 'dist-electron');
+exports.RENDERER_DIST = path_1.default.join(process.env.APP_ROOT, 'dist/renderer');
+process.env.VITE_PUBLIC = exports.VITE_DEV_SERVER_URL
+    ? path_1.default.join(process.env.APP_ROOT, 'renderer/public')
+    : exports.RENDERER_DIST;
 const iconCandidates = ['gidit-logo.png'];
 function loadAppIcon() {
     const appRoot = process.env.APP_ROOT ?? '';
     const searchRoots = [
         process.env.VITE_PUBLIC,
-        path.join(appRoot, 'renderer/public'),
-        path.resolve(appRoot, '..', 'renderer/public'),
-        path.join(appRoot, 'public'),
-        path.resolve(appRoot, '..', 'public'),
-        path.join(appRoot, 'dist/renderer'),
-        path.resolve(appRoot, '..', 'dist/renderer'),
+        path_1.default.join(appRoot, 'renderer/public'),
+        path_1.default.resolve(appRoot, '..', 'renderer/public'),
+        path_1.default.join(appRoot, 'public'),
+        path_1.default.resolve(appRoot, '..', 'public'),
+        path_1.default.join(appRoot, 'dist/renderer'),
+        path_1.default.resolve(appRoot, '..', 'dist/renderer'),
     ]
         .filter((dir) => Boolean(dir))
-        .map((dir) => path.normalize(dir));
+        .map((dir) => path_1.default.normalize(dir));
     console.log('[icon] search roots:', searchRoots);
     for (const root of searchRoots) {
         for (const candidate of iconCandidates) {
-            const absolute = path.join(root, candidate);
-            if (!existsSync(absolute)) {
+            const absolute = path_1.default.join(root, candidate);
+            if (!fs_1.default.existsSync(absolute)) {
                 continue;
             }
             try {
-                let image = nativeImage.createFromPath(absolute);
+                let image = electron_1.nativeImage.createFromPath(absolute);
                 if (image.isEmpty()) {
-                    const buffer = readFileSync(absolute);
-                    image = nativeImage.createFromBuffer(buffer);
+                    const buffer = fs_1.default.readFileSync(absolute);
+                    image = electron_1.nativeImage.createFromBuffer(buffer);
                 }
                 if (!image.isEmpty()) {
                     const resized = image.resize({ width: 512, height: 512 });
@@ -59,24 +63,24 @@ function loadAppIcon() {
 const { image: logoIcon, path: logoPath } = loadAppIcon();
 let mainWindow = null;
 async function loadRenderer(win) {
-    if (VITE_DEV_SERVER_URL) {
-        await win.loadURL(VITE_DEV_SERVER_URL);
+    if (exports.VITE_DEV_SERVER_URL) {
+        await win.loadURL(exports.VITE_DEV_SERVER_URL);
         win.webContents.openDevTools({ mode: 'detach' });
     }
     else {
-        const indexPath = path.join(RENDERER_DIST, 'index.html');
+        const indexPath = path_1.default.join(exports.RENDERER_DIST, 'index.html');
         await win.loadFile(indexPath);
     }
 }
 function createWindow() {
-    mainWindow = new BrowserWindow({
+    mainWindow = new electron_1.BrowserWindow({
         width: 1280,
         height: 800,
         minWidth: 1024,
         minHeight: 640,
         icon: logoIcon ?? logoPath,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
+            preload: path_1.default.join(resolvedDir, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
         },
@@ -85,36 +89,36 @@ function createWindow() {
         console.error('Failed to load renderer:', error);
     });
 }
-if (!app.requestSingleInstanceLock()) {
-    app.quit();
+if (!electron_1.app.requestSingleInstanceLock()) {
+    electron_1.app.quit();
 }
 else {
-    app.on('second-instance', () => {
+    electron_1.app.on('second-instance', () => {
         if (!mainWindow)
             return;
         if (mainWindow.isMinimized())
             mainWindow.restore();
         mainWindow.focus();
     });
-    app.on('ready', async () => {
-        protocol.registerFileProtocol('app', (request, callback) => {
+    electron_1.app.on('ready', async () => {
+        electron_1.protocol.registerFileProtocol('app', (request, callback) => {
             const url = request.url.slice(6);
-            callback({ path: path.normalize(`${__dirname}/${url}`) });
+            callback({ path: path_1.default.normalize(`${resolvedDir}/${url}`) });
         });
         if (process.platform === 'darwin' && logoIcon) {
-            app.dock.setIcon(logoIcon);
+            electron_1.app.dock.setIcon(logoIcon);
         }
         createWindow();
     });
 }
-app.on('window-all-closed', () => {
+electron_1.app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        app.quit();
+        electron_1.app.quit();
         mainWindow = null;
     }
 });
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+electron_1.app.on('activate', () => {
+    if (electron_1.BrowserWindow.getAllWindows().length === 0) {
         createWindow();
     }
 });

@@ -1,15 +1,13 @@
-import require$$1$2, { ipcMain as ipcMain$1, shell as shell$1, app as app$1, protocol, BrowserWindow, nativeImage } from "electron";
-import { existsSync, readFileSync as readFileSync$1 } from "node:fs";
-import { fileURLToPath as fileURLToPath$1 } from "node:url";
-import path$7 from "node:path";
-import path$6 from "path";
-import require$$1$1 from "util";
-import fs$3 from "fs";
-import require$$3$2 from "crypto";
-import require$$4 from "assert";
-import require$$5 from "events";
-import require$$1 from "os";
-import { fileURLToPath } from "url";
+"use strict";
+Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+const require$$1$2 = require("electron");
+const fs$3 = require("fs");
+const path$6 = require("path");
+const require$$1$1 = require("util");
+const require$$3$2 = require("crypto");
+const require$$4 = require("assert");
+const require$$5 = require("events");
+const require$$1 = require("os");
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
@@ -801,17 +799,17 @@ var boolSchema$1 = {};
 var errors$1 = {};
 var codegen$1 = {};
 var code$3 = {};
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.regexpCode = exports2.getEsmExportName = exports2.getProperty = exports2.safeStringify = exports2.stringify = exports2.strConcat = exports2.addCodeArg = exports2.str = exports2._ = exports2.nil = exports2._Code = exports2.Name = exports2.IDENTIFIER = exports2._CodeOrName = void 0;
   class _CodeOrName {
   }
-  exports._CodeOrName = _CodeOrName;
-  exports.IDENTIFIER = /^[a-z$_][a-z$_0-9]*$/i;
+  exports2._CodeOrName = _CodeOrName;
+  exports2.IDENTIFIER = /^[a-z$_][a-z$_0-9]*$/i;
   class Name extends _CodeOrName {
     constructor(s) {
       super();
-      if (!exports.IDENTIFIER.test(s))
+      if (!exports2.IDENTIFIER.test(s))
         throw new Error("CodeGen: name must be a valid identifier");
       this.str = s;
     }
@@ -825,7 +823,7 @@ var code$3 = {};
       return { [this.str]: 1 };
     }
   }
-  exports.Name = Name;
+  exports2.Name = Name;
   class _Code extends _CodeOrName {
     constructor(code2) {
       super();
@@ -853,8 +851,8 @@ var code$3 = {};
       }, {});
     }
   }
-  exports._Code = _Code;
-  exports.nil = new _Code("");
+  exports2._Code = _Code;
+  exports2.nil = new _Code("");
   function _(strs, ...args) {
     const code2 = [strs[0]];
     let i = 0;
@@ -864,7 +862,7 @@ var code$3 = {};
     }
     return new _Code(code2);
   }
-  exports._ = _;
+  exports2._ = _;
   const plus = new _Code("+");
   function str(strs, ...args) {
     const expr = [safeStringify(strs[0])];
@@ -877,7 +875,7 @@ var code$3 = {};
     optimize(expr);
     return new _Code(expr);
   }
-  exports.str = str;
+  exports2.str = str;
   function addCodeArg(code2, arg) {
     if (arg instanceof _Code)
       code2.push(...arg._items);
@@ -886,7 +884,7 @@ var code$3 = {};
     else
       code2.push(interpolate(arg));
   }
-  exports.addCodeArg = addCodeArg;
+  exports2.addCodeArg = addCodeArg;
   function optimize(expr) {
     let i = 1;
     while (i < expr.length - 1) {
@@ -922,38 +920,38 @@ var code$3 = {};
   function strConcat(c1, c2) {
     return c2.emptyStr() ? c1 : c1.emptyStr() ? c2 : str`${c1}${c2}`;
   }
-  exports.strConcat = strConcat;
+  exports2.strConcat = strConcat;
   function interpolate(x) {
     return typeof x == "number" || typeof x == "boolean" || x === null ? x : safeStringify(Array.isArray(x) ? x.join(",") : x);
   }
   function stringify(x) {
     return new _Code(safeStringify(x));
   }
-  exports.stringify = stringify;
+  exports2.stringify = stringify;
   function safeStringify(x) {
     return JSON.stringify(x).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   }
-  exports.safeStringify = safeStringify;
+  exports2.safeStringify = safeStringify;
   function getProperty(key) {
-    return typeof key == "string" && exports.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _`[${key}]`;
+    return typeof key == "string" && exports2.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _`[${key}]`;
   }
-  exports.getProperty = getProperty;
+  exports2.getProperty = getProperty;
   function getEsmExportName(key) {
-    if (typeof key == "string" && exports.IDENTIFIER.test(key)) {
+    if (typeof key == "string" && exports2.IDENTIFIER.test(key)) {
       return new _Code(`${key}`);
     }
     throw new Error(`CodeGen: invalid export name: ${key}, use explicit $id name mapping`);
   }
-  exports.getEsmExportName = getEsmExportName;
+  exports2.getEsmExportName = getEsmExportName;
   function regexpCode(rx) {
     return new _Code(rx.toString());
   }
-  exports.regexpCode = regexpCode;
+  exports2.regexpCode = regexpCode;
 })(code$3);
 var scope$1 = {};
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.ValueScope = exports.ValueScopeName = exports.Scope = exports.varKinds = exports.UsedValueState = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.ValueScope = exports2.ValueScopeName = exports2.Scope = exports2.varKinds = exports2.UsedValueState = void 0;
   const code_12 = code$3;
   class ValueError extends Error {
     constructor(name) {
@@ -965,8 +963,8 @@ var scope$1 = {};
   (function(UsedValueState2) {
     UsedValueState2[UsedValueState2["Started"] = 0] = "Started";
     UsedValueState2[UsedValueState2["Completed"] = 1] = "Completed";
-  })(UsedValueState || (exports.UsedValueState = UsedValueState = {}));
-  exports.varKinds = {
+  })(UsedValueState || (exports2.UsedValueState = UsedValueState = {}));
+  exports2.varKinds = {
     const: new code_12.Name("const"),
     let: new code_12.Name("let"),
     var: new code_12.Name("var")
@@ -995,7 +993,7 @@ var scope$1 = {};
       return this._names[prefix] = { prefix, index: 0 };
     }
   }
-  exports.Scope = Scope;
+  exports2.Scope = Scope;
   class ValueScopeName extends code_12.Name {
     constructor(prefix, nameStr) {
       super(nameStr);
@@ -1006,7 +1004,7 @@ var scope$1 = {};
       this.scopePath = (0, code_12._)`.${new code_12.Name(property)}[${itemIndex}]`;
     }
   }
-  exports.ValueScopeName = ValueScopeName;
+  exports2.ValueScopeName = ValueScopeName;
   const line = (0, code_12._)`\n`;
   class ValueScope extends Scope {
     constructor(opts) {
@@ -1076,7 +1074,7 @@ var scope$1 = {};
           nameSet.set(name, UsedValueState.Started);
           let c = valueCode(name);
           if (c) {
-            const def2 = this.opts.es5 ? exports.varKinds.var : exports.varKinds.const;
+            const def2 = this.opts.es5 ? exports2.varKinds.var : exports2.varKinds.const;
             code2 = (0, code_12._)`${code2}${def2} ${name} = ${c};${this.opts._n}`;
           } else if (c = getCode === null || getCode === void 0 ? void 0 : getCode(name)) {
             code2 = (0, code_12._)`${code2}${c}${this.opts._n}`;
@@ -1089,52 +1087,52 @@ var scope$1 = {};
       return code2;
     }
   }
-  exports.ValueScope = ValueScope;
+  exports2.ValueScope = ValueScope;
 })(scope$1);
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.or = exports.and = exports.not = exports.CodeGen = exports.operators = exports.varKinds = exports.ValueScopeName = exports.ValueScope = exports.Scope = exports.Name = exports.regexpCode = exports.stringify = exports.getProperty = exports.nil = exports.strConcat = exports.str = exports._ = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.or = exports2.and = exports2.not = exports2.CodeGen = exports2.operators = exports2.varKinds = exports2.ValueScopeName = exports2.ValueScope = exports2.Scope = exports2.Name = exports2.regexpCode = exports2.stringify = exports2.getProperty = exports2.nil = exports2.strConcat = exports2.str = exports2._ = void 0;
   const code_12 = code$3;
   const scope_1 = scope$1;
   var code_2 = code$3;
-  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "_", { enumerable: true, get: function() {
     return code_2._;
   } });
-  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "str", { enumerable: true, get: function() {
     return code_2.str;
   } });
-  Object.defineProperty(exports, "strConcat", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "strConcat", { enumerable: true, get: function() {
     return code_2.strConcat;
   } });
-  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "nil", { enumerable: true, get: function() {
     return code_2.nil;
   } });
-  Object.defineProperty(exports, "getProperty", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "getProperty", { enumerable: true, get: function() {
     return code_2.getProperty;
   } });
-  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "stringify", { enumerable: true, get: function() {
     return code_2.stringify;
   } });
-  Object.defineProperty(exports, "regexpCode", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "regexpCode", { enumerable: true, get: function() {
     return code_2.regexpCode;
   } });
-  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Name", { enumerable: true, get: function() {
     return code_2.Name;
   } });
   var scope_2 = scope$1;
-  Object.defineProperty(exports, "Scope", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Scope", { enumerable: true, get: function() {
     return scope_2.Scope;
   } });
-  Object.defineProperty(exports, "ValueScope", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "ValueScope", { enumerable: true, get: function() {
     return scope_2.ValueScope;
   } });
-  Object.defineProperty(exports, "ValueScopeName", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "ValueScopeName", { enumerable: true, get: function() {
     return scope_2.ValueScopeName;
   } });
-  Object.defineProperty(exports, "varKinds", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "varKinds", { enumerable: true, get: function() {
     return scope_2.varKinds;
   } });
-  exports.operators = {
+  exports2.operators = {
     GT: new code_12._Code(">"),
     GTE: new code_12._Code(">="),
     LT: new code_12._Code("<"),
@@ -1547,7 +1545,7 @@ var scope$1 = {};
     }
     // `+=` code
     add(lhs, rhs) {
-      return this._leafNode(new AssignOp(lhs, exports.operators.ADD, rhs));
+      return this._leafNode(new AssignOp(lhs, exports2.operators.ADD, rhs));
     }
     // appends passed SafeExpr to code or executes Block
     code(c) {
@@ -1747,7 +1745,7 @@ var scope$1 = {};
       ns[ns.length - 1] = node;
     }
   }
-  exports.CodeGen = CodeGen;
+  exports2.CodeGen = CodeGen;
   function addNames(names2, from) {
     for (const n in from)
       names2[n] = (names2[n] || 0) + (from[n] || 0);
@@ -1788,17 +1786,17 @@ var scope$1 = {};
   function not2(x) {
     return typeof x == "boolean" || typeof x == "number" || x === null ? !x : (0, code_12._)`!${par(x)}`;
   }
-  exports.not = not2;
-  const andCode = mappend(exports.operators.AND);
+  exports2.not = not2;
+  const andCode = mappend(exports2.operators.AND);
   function and(...args) {
     return args.reduce(andCode);
   }
-  exports.and = and;
-  const orCode = mappend(exports.operators.OR);
+  exports2.and = and;
+  const orCode = mappend(exports2.operators.OR);
   function or(...args) {
     return args.reduce(orCode);
   }
-  exports.or = or;
+  exports2.or = or;
   function mappend(op) {
     return (x, y) => x === code_12.nil ? y : y === code_12.nil ? x : (0, code_12._)`${par(x)} ${op} ${par(y)}`;
   }
@@ -2000,19 +1998,19 @@ const names$2 = {
   jsonPart: new codegen_1$_.Name("jsonPart")
 };
 names$3.default = names$2;
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.extendErrors = exports.resetErrorsCount = exports.reportExtraError = exports.reportError = exports.keyword$DataError = exports.keywordError = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.extendErrors = exports2.resetErrorsCount = exports2.reportExtraError = exports2.reportError = exports2.keyword$DataError = exports2.keywordError = void 0;
   const codegen_12 = codegen$1;
   const util_12 = util$1;
   const names_12 = names$3;
-  exports.keywordError = {
+  exports2.keywordError = {
     message: ({ keyword: keyword2 }) => (0, codegen_12.str)`must pass "${keyword2}" keyword validation`
   };
-  exports.keyword$DataError = {
+  exports2.keyword$DataError = {
     message: ({ keyword: keyword2, schemaType }) => schemaType ? (0, codegen_12.str)`"${keyword2}" keyword must be ${schemaType} ($data)` : (0, codegen_12.str)`"${keyword2}" keyword is invalid ($data)`
   };
-  function reportError(cxt, error2 = exports.keywordError, errorPaths, overrideAllErrors) {
+  function reportError(cxt, error2 = exports2.keywordError, errorPaths, overrideAllErrors) {
     const { it } = cxt;
     const { gen, compositeRule, allErrors } = it;
     const errObj = errorObjectCode(cxt, error2, errorPaths);
@@ -2022,8 +2020,8 @@ names$3.default = names$2;
       returnErrors(it, (0, codegen_12._)`[${errObj}]`);
     }
   }
-  exports.reportError = reportError;
-  function reportExtraError(cxt, error2 = exports.keywordError, errorPaths) {
+  exports2.reportError = reportError;
+  function reportExtraError(cxt, error2 = exports2.keywordError, errorPaths) {
     const { it } = cxt;
     const { gen, compositeRule, allErrors } = it;
     const errObj = errorObjectCode(cxt, error2, errorPaths);
@@ -2032,12 +2030,12 @@ names$3.default = names$2;
       returnErrors(it, names_12.default.vErrors);
     }
   }
-  exports.reportExtraError = reportExtraError;
+  exports2.reportExtraError = reportExtraError;
   function resetErrorsCount(gen, errsCount) {
     gen.assign(names_12.default.errors, errsCount);
     gen.if((0, codegen_12._)`${names_12.default.vErrors} !== null`, () => gen.if(errsCount, () => gen.assign((0, codegen_12._)`${names_12.default.vErrors}.length`, errsCount), () => gen.assign(names_12.default.vErrors, null)));
   }
-  exports.resetErrorsCount = resetErrorsCount;
+  exports2.resetErrorsCount = resetErrorsCount;
   function extendErrors({ gen, keyword: keyword2, schemaValue, data, errsCount, it }) {
     if (errsCount === void 0)
       throw new Error("ajv implementation error");
@@ -2052,7 +2050,7 @@ names$3.default = names$2;
       }
     });
   }
-  exports.extendErrors = extendErrors;
+  exports2.extendErrors = extendErrors;
   function addError(gen, errObj) {
     const err = gen.const("err", errObj);
     gen.if((0, codegen_12._)`${names_12.default.vErrors} === null`, () => gen.assign(names_12.default.vErrors, (0, codegen_12._)`[${err}]`), (0, codegen_12._)`${names_12.default.vErrors}.push(${err})`);
@@ -3000,7 +2998,7 @@ const keyword_1$1 = keyword$1;
 const subschema_1$1 = subschema$1;
 const codegen_1$T = codegen$1;
 const names_1$a = names$3;
-const resolve_1$5 = resolve$4;
+const resolve_1$4 = resolve$4;
 const util_1$M = util$1;
 const errors_1$4 = errors$1;
 function validateFunctionCode$1(it) {
@@ -3127,7 +3125,7 @@ function checkNoDefault$1(it) {
 function updateContext$1(it) {
   const schId = it.schema[it.opts.schemaId];
   if (schId)
-    it.baseId = (0, resolve_1$5.resolveUrl)(it.opts.uriResolver, it.baseId, schId);
+    it.baseId = (0, resolve_1$4.resolveUrl)(it.opts.uriResolver, it.baseId, schId);
 }
 function checkAsyncSchema$1(it) {
   if (it.schema.$async && !it.schemaEnv.$async)
@@ -3144,9 +3142,9 @@ function commentKeyword$1({ gen, schemaEnv, schema, errSchemaPath, opts }) {
   }
 }
 function returnResults$1(it) {
-  const { gen, schemaEnv, validateName, ValidationError: ValidationError3, opts } = it;
+  const { gen, schemaEnv, validateName, ValidationError: ValidationError2, opts } = it;
   if (schemaEnv.$async) {
-    gen.if((0, codegen_1$T._)`${names_1$a.default.errors} === 0`, () => gen.return(names_1$a.default.data), () => gen.throw((0, codegen_1$T._)`new ${ValidationError3}(${names_1$a.default.vErrors})`));
+    gen.if((0, codegen_1$T._)`${names_1$a.default.errors} === 0`, () => gen.return(names_1$a.default.data), () => gen.throw((0, codegen_1$T._)`new ${ValidationError2}(${names_1$a.default.vErrors})`));
   } else {
     gen.assign((0, codegen_1$T._)`${validateName}.errors`, names_1$a.default.vErrors);
     if (opts.unevaluated)
@@ -3491,32 +3489,32 @@ function getData$1($data, { dataLevel, dataNames, dataPathArr }) {
 validate$1.getData = getData$1;
 var validation_error$1 = {};
 Object.defineProperty(validation_error$1, "__esModule", { value: true });
-let ValidationError$1 = class ValidationError extends Error {
+class ValidationError extends Error {
   constructor(errors2) {
     super("validation failed");
     this.errors = errors2;
     this.ajv = this.validation = true;
   }
-};
-validation_error$1.default = ValidationError$1;
+}
+validation_error$1.default = ValidationError;
 var ref_error$1 = {};
 Object.defineProperty(ref_error$1, "__esModule", { value: true });
-const resolve_1$4 = resolve$4;
-let MissingRefError$1 = class MissingRefError extends Error {
+const resolve_1$3 = resolve$4;
+class MissingRefError extends Error {
   constructor(resolver, baseId, ref2, msg) {
     super(msg || `can't resolve reference ${ref2} from id ${baseId}`);
-    this.missingRef = (0, resolve_1$4.resolveUrl)(resolver, baseId, ref2);
-    this.missingSchema = (0, resolve_1$4.normalizeId)((0, resolve_1$4.getFullPath)(resolver, this.missingRef));
+    this.missingRef = (0, resolve_1$3.resolveUrl)(resolver, baseId, ref2);
+    this.missingSchema = (0, resolve_1$3.normalizeId)((0, resolve_1$3.getFullPath)(resolver, this.missingRef));
   }
-};
-ref_error$1.default = MissingRefError$1;
+}
+ref_error$1.default = MissingRefError;
 var compile$1 = {};
 Object.defineProperty(compile$1, "__esModule", { value: true });
 compile$1.resolveSchema = compile$1.getCompilingSchema = compile$1.resolveRef = compile$1.compileSchema = compile$1.SchemaEnv = void 0;
 const codegen_1$S = codegen$1;
 const validation_error_1$1 = validation_error$1;
 const names_1$9 = names$3;
-const resolve_1$3 = resolve$4;
+const resolve_1$2 = resolve$4;
 const util_1$L = util$1;
 const validate_1$3 = validate$1;
 let SchemaEnv$1 = class SchemaEnv {
@@ -3530,7 +3528,7 @@ let SchemaEnv$1 = class SchemaEnv {
     this.schema = env2.schema;
     this.schemaId = env2.schemaId;
     this.root = env2.root || this;
-    this.baseId = (_a = env2.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1$3.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env2.schemaId || "$id"]);
+    this.baseId = (_a = env2.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1$2.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env2.schemaId || "$id"]);
     this.schemaPath = env2.schemaPath;
     this.localRefs = env2.localRefs;
     this.meta = env2.meta;
@@ -3543,7 +3541,7 @@ function compileSchema$1(sch) {
   const _sch = getCompilingSchema$1.call(this, sch);
   if (_sch)
     return _sch;
-  const rootId = (0, resolve_1$3.getFullPath)(this.opts.uriResolver, sch.root.baseId);
+  const rootId = (0, resolve_1$2.getFullPath)(this.opts.uriResolver, sch.root.baseId);
   const { es5, lines } = this.opts.code;
   const { ownProperties } = this.opts;
   const gen = new codegen_1$S.CodeGen(this.scope, { es5, lines, ownProperties });
@@ -3627,7 +3625,7 @@ function compileSchema$1(sch) {
 compile$1.compileSchema = compileSchema$1;
 function resolveRef$1(root, baseId, ref2) {
   var _a;
-  ref2 = (0, resolve_1$3.resolveUrl)(this.opts.uriResolver, baseId, ref2);
+  ref2 = (0, resolve_1$2.resolveUrl)(this.opts.uriResolver, baseId, ref2);
   const schOrFunc = root.refs[ref2];
   if (schOrFunc)
     return schOrFunc;
@@ -3644,7 +3642,7 @@ function resolveRef$1(root, baseId, ref2) {
 }
 compile$1.resolveRef = resolveRef$1;
 function inlineOrCompile$1(sch) {
-  if ((0, resolve_1$3.inlineRef)(sch.schema, this.opts.inlineRefs))
+  if ((0, resolve_1$2.inlineRef)(sch.schema, this.opts.inlineRefs))
     return sch.schema;
   return sch.validate ? sch : compileSchema$1.call(this, sch);
 }
@@ -3666,12 +3664,12 @@ function resolve$3(root, ref2) {
 }
 function resolveSchema$1(root, ref2) {
   const p = this.opts.uriResolver.parse(ref2);
-  const refPath = (0, resolve_1$3._getFullPath)(this.opts.uriResolver, p);
-  let baseId = (0, resolve_1$3.getFullPath)(this.opts.uriResolver, root.baseId, void 0);
+  const refPath = (0, resolve_1$2._getFullPath)(this.opts.uriResolver, p);
+  let baseId = (0, resolve_1$2.getFullPath)(this.opts.uriResolver, root.baseId, void 0);
   if (Object.keys(root.schema).length > 0 && refPath === baseId) {
     return getJsonPointer$1.call(this, p, root);
   }
-  const id2 = (0, resolve_1$3.normalizeId)(refPath);
+  const id2 = (0, resolve_1$2.normalizeId)(refPath);
   const schOrRef = this.refs[id2] || this.schemas[id2];
   if (typeof schOrRef == "string") {
     const sch = resolveSchema$1.call(this, root, schOrRef);
@@ -3683,12 +3681,12 @@ function resolveSchema$1(root, ref2) {
     return;
   if (!schOrRef.validate)
     compileSchema$1.call(this, schOrRef);
-  if (id2 === (0, resolve_1$3.normalizeId)(ref2)) {
+  if (id2 === (0, resolve_1$2.normalizeId)(ref2)) {
     const { schema } = schOrRef;
     const { schemaId } = this.opts;
     const schId = schema[schemaId];
     if (schId)
-      baseId = (0, resolve_1$3.resolveUrl)(this.opts.uriResolver, baseId, schId);
+      baseId = (0, resolve_1$2.resolveUrl)(this.opts.uriResolver, baseId, schId);
     return new SchemaEnv$1({ schema, schemaId, root, baseId });
   }
   return getJsonPointer$1.call(this, p, schOrRef);
@@ -3714,12 +3712,12 @@ function getJsonPointer$1(parsedRef, { baseId, schema, root }) {
     schema = partSchema;
     const schId = typeof schema === "object" && schema[this.opts.schemaId];
     if (!PREVENT_SCOPE_CHANGE$1.has(part) && schId) {
-      baseId = (0, resolve_1$3.resolveUrl)(this.opts.uriResolver, baseId, schId);
+      baseId = (0, resolve_1$2.resolveUrl)(this.opts.uriResolver, baseId, schId);
     }
   }
   let env2;
   if (typeof schema != "boolean" && schema.$ref && !(0, util_1$L.schemaHasRulesButRef)(schema, this.RULES)) {
-    const $ref = (0, resolve_1$3.resolveUrl)(this.opts.uriResolver, baseId, schema.$ref);
+    const $ref = (0, resolve_1$2.resolveUrl)(this.opts.uriResolver, baseId, schema.$ref);
     env2 = resolveSchema$1.call(this, root, $ref);
   }
   const { schemaId } = this.opts;
@@ -4444,30 +4442,30 @@ Object.defineProperty(uri$3, "__esModule", { value: true });
 const uri$2 = fastUriExports;
 uri$2.code = 'require("ajv/dist/runtime/uri").default';
 uri$3.default = uri$2;
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.CodeGen = exports2.Name = exports2.nil = exports2.stringify = exports2.str = exports2._ = exports2.KeywordCxt = void 0;
   var validate_12 = validate$1;
-  Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "KeywordCxt", { enumerable: true, get: function() {
     return validate_12.KeywordCxt;
   } });
   var codegen_12 = codegen$1;
-  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "_", { enumerable: true, get: function() {
     return codegen_12._;
   } });
-  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "str", { enumerable: true, get: function() {
     return codegen_12.str;
   } });
-  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "stringify", { enumerable: true, get: function() {
     return codegen_12.stringify;
   } });
-  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "nil", { enumerable: true, get: function() {
     return codegen_12.nil;
   } });
-  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Name", { enumerable: true, get: function() {
     return codegen_12.Name;
   } });
-  Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "CodeGen", { enumerable: true, get: function() {
     return codegen_12.CodeGen;
   } });
   const validation_error_12 = validation_error$1;
@@ -4921,7 +4919,7 @@ uri$3.default = uri$2;
   }
   Ajv.ValidationError = validation_error_12.default;
   Ajv.MissingRefError = ref_error_12.default;
-  exports.default = Ajv;
+  exports2.default = Ajv;
   function checkOptions(checkOpts, options, msg, log = "error") {
     for (const key in checkOpts) {
       const opt = key;
@@ -5821,13 +5819,13 @@ const def$F = {
 };
 contains$1.default = def$F;
 var dependencies$1 = {};
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.validateSchemaDeps = exports.validatePropertyDeps = exports.error = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.validateSchemaDeps = exports2.validatePropertyDeps = exports2.error = void 0;
   const codegen_12 = codegen$1;
   const util_12 = util$1;
   const code_12 = code$2;
-  exports.error = {
+  exports2.error = {
     message: ({ params: { property, depsCount, deps } }) => {
       const property_ies = depsCount === 1 ? "property" : "properties";
       return (0, codegen_12.str)`must have ${property_ies} ${deps} when property ${property} is present`;
@@ -5842,7 +5840,7 @@ var dependencies$1 = {};
     keyword: "dependencies",
     type: "object",
     schemaType: "object",
-    error: exports.error,
+    error: exports2.error,
     code(cxt) {
       const [propDeps, schDeps] = splitDependencies(cxt);
       validatePropertyDeps(cxt, propDeps);
@@ -5888,7 +5886,7 @@ var dependencies$1 = {};
       }
     }
   }
-  exports.validatePropertyDeps = validatePropertyDeps;
+  exports2.validatePropertyDeps = validatePropertyDeps;
   function validateSchemaDeps(cxt, schemaDeps = cxt.schema) {
     const { gen, data, keyword: keyword2, it } = cxt;
     const valid2 = gen.name("valid");
@@ -5907,8 +5905,8 @@ var dependencies$1 = {};
       cxt.ok(valid2);
     }
   }
-  exports.validateSchemaDeps = validateSchemaDeps;
-  exports.default = def2;
+  exports2.validateSchemaDeps = validateSchemaDeps;
+  exports2.default = def2;
 })(dependencies$1);
 var propertyNames$1 = {};
 Object.defineProperty(propertyNames$1, "__esModule", { value: true });
@@ -6867,9 +6865,9 @@ const require$$3$1 = {
   properties: properties$3,
   "default": true
 };
-(function(module, exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv = void 0;
+(function(module2, exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.MissingRefError = exports2.ValidationError = exports2.CodeGen = exports2.Name = exports2.nil = exports2.stringify = exports2.str = exports2._ = exports2.KeywordCxt = exports2.Ajv = void 0;
   const core_12 = core$5;
   const draft7_1 = draft7$1;
   const discriminator_1 = discriminator$1;
@@ -6895,53 +6893,53 @@ const require$$3$1 = {
       return this.opts.defaultMeta = super.defaultMeta() || (this.getSchema(META_SCHEMA_ID) ? META_SCHEMA_ID : void 0);
     }
   }
-  exports.Ajv = Ajv;
-  module.exports = exports = Ajv;
-  module.exports.Ajv = Ajv;
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.default = Ajv;
+  exports2.Ajv = Ajv;
+  module2.exports = exports2 = Ajv;
+  module2.exports.Ajv = Ajv;
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.default = Ajv;
   var validate_12 = validate$1;
-  Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "KeywordCxt", { enumerable: true, get: function() {
     return validate_12.KeywordCxt;
   } });
   var codegen_12 = codegen$1;
-  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "_", { enumerable: true, get: function() {
     return codegen_12._;
   } });
-  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "str", { enumerable: true, get: function() {
     return codegen_12.str;
   } });
-  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "stringify", { enumerable: true, get: function() {
     return codegen_12.stringify;
   } });
-  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "nil", { enumerable: true, get: function() {
     return codegen_12.nil;
   } });
-  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Name", { enumerable: true, get: function() {
     return codegen_12.Name;
   } });
-  Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "CodeGen", { enumerable: true, get: function() {
     return codegen_12.CodeGen;
   } });
   var validation_error_12 = validation_error$1;
-  Object.defineProperty(exports, "ValidationError", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "ValidationError", { enumerable: true, get: function() {
     return validation_error_12.default;
   } });
   var ref_error_12 = ref_error$1;
-  Object.defineProperty(exports, "MissingRefError", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "MissingRefError", { enumerable: true, get: function() {
     return ref_error_12.default;
   } });
 })(ajv$1, ajv$1.exports);
 var ajvExports$1 = ajv$1.exports;
 var dist = { exports: {} };
 var formats = {};
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.formatNames = exports.fastFormats = exports.fullFormats = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.formatNames = exports2.fastFormats = exports2.fullFormats = void 0;
   function fmtDef(validate2, compare2) {
     return { validate: validate2, compare: compare2 };
   }
-  exports.fullFormats = {
+  exports2.fullFormats = {
     // date: http://tools.ietf.org/html/rfc3339#section-5.6
     date: fmtDef(date, compareDate),
     // date-time: http://tools.ietf.org/html/rfc3339#section-5.6
@@ -6986,8 +6984,8 @@ var formats = {};
     // unchecked string payload
     binary: true
   };
-  exports.fastFormats = {
-    ...exports.fullFormats,
+  exports2.fastFormats = {
+    ...exports2.fullFormats,
     date: fmtDef(/^\d\d\d\d-[0-1]\d-[0-3]\d$/, compareDate),
     time: fmtDef(/^(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)?$/i, compareTime),
     "date-time": fmtDef(/^\d\d\d\d-[0-1]\d-[0-3]\d[t\s](?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)$/i, compareDateTime),
@@ -6999,7 +6997,7 @@ var formats = {};
     // http://www.w3.org/TR/html5/forms.html#valid-e-mail-address (search for 'wilful violation')
     email: /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/i
   };
-  exports.formatNames = Object.keys(exports.fullFormats);
+  exports2.formatNames = Object.keys(exports2.fullFormats);
   function isLeapYear(year) {
     return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
   }
@@ -7105,17 +7103,17 @@ var boolSchema = {};
 var errors = {};
 var codegen = {};
 var code$1 = {};
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.regexpCode = exports2.getEsmExportName = exports2.getProperty = exports2.safeStringify = exports2.stringify = exports2.strConcat = exports2.addCodeArg = exports2.str = exports2._ = exports2.nil = exports2._Code = exports2.Name = exports2.IDENTIFIER = exports2._CodeOrName = void 0;
   class _CodeOrName {
   }
-  exports._CodeOrName = _CodeOrName;
-  exports.IDENTIFIER = /^[a-z$_][a-z$_0-9]*$/i;
+  exports2._CodeOrName = _CodeOrName;
+  exports2.IDENTIFIER = /^[a-z$_][a-z$_0-9]*$/i;
   class Name extends _CodeOrName {
     constructor(s) {
       super();
-      if (!exports.IDENTIFIER.test(s))
+      if (!exports2.IDENTIFIER.test(s))
         throw new Error("CodeGen: name must be a valid identifier");
       this.str = s;
     }
@@ -7129,7 +7127,7 @@ var code$1 = {};
       return { [this.str]: 1 };
     }
   }
-  exports.Name = Name;
+  exports2.Name = Name;
   class _Code extends _CodeOrName {
     constructor(code2) {
       super();
@@ -7157,8 +7155,8 @@ var code$1 = {};
       }, {});
     }
   }
-  exports._Code = _Code;
-  exports.nil = new _Code("");
+  exports2._Code = _Code;
+  exports2.nil = new _Code("");
   function _(strs, ...args) {
     const code2 = [strs[0]];
     let i = 0;
@@ -7168,7 +7166,7 @@ var code$1 = {};
     }
     return new _Code(code2);
   }
-  exports._ = _;
+  exports2._ = _;
   const plus = new _Code("+");
   function str(strs, ...args) {
     const expr = [safeStringify(strs[0])];
@@ -7181,7 +7179,7 @@ var code$1 = {};
     optimize(expr);
     return new _Code(expr);
   }
-  exports.str = str;
+  exports2.str = str;
   function addCodeArg(code2, arg) {
     if (arg instanceof _Code)
       code2.push(...arg._items);
@@ -7190,7 +7188,7 @@ var code$1 = {};
     else
       code2.push(interpolate(arg));
   }
-  exports.addCodeArg = addCodeArg;
+  exports2.addCodeArg = addCodeArg;
   function optimize(expr) {
     let i = 1;
     while (i < expr.length - 1) {
@@ -7226,38 +7224,38 @@ var code$1 = {};
   function strConcat(c1, c2) {
     return c2.emptyStr() ? c1 : c1.emptyStr() ? c2 : str`${c1}${c2}`;
   }
-  exports.strConcat = strConcat;
+  exports2.strConcat = strConcat;
   function interpolate(x) {
     return typeof x == "number" || typeof x == "boolean" || x === null ? x : safeStringify(Array.isArray(x) ? x.join(",") : x);
   }
   function stringify(x) {
     return new _Code(safeStringify(x));
   }
-  exports.stringify = stringify;
+  exports2.stringify = stringify;
   function safeStringify(x) {
     return JSON.stringify(x).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   }
-  exports.safeStringify = safeStringify;
+  exports2.safeStringify = safeStringify;
   function getProperty(key) {
-    return typeof key == "string" && exports.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _`[${key}]`;
+    return typeof key == "string" && exports2.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _`[${key}]`;
   }
-  exports.getProperty = getProperty;
+  exports2.getProperty = getProperty;
   function getEsmExportName(key) {
-    if (typeof key == "string" && exports.IDENTIFIER.test(key)) {
+    if (typeof key == "string" && exports2.IDENTIFIER.test(key)) {
       return new _Code(`${key}`);
     }
     throw new Error(`CodeGen: invalid export name: ${key}, use explicit $id name mapping`);
   }
-  exports.getEsmExportName = getEsmExportName;
+  exports2.getEsmExportName = getEsmExportName;
   function regexpCode(rx) {
     return new _Code(rx.toString());
   }
-  exports.regexpCode = regexpCode;
+  exports2.regexpCode = regexpCode;
 })(code$1);
 var scope = {};
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.ValueScope = exports.ValueScopeName = exports.Scope = exports.varKinds = exports.UsedValueState = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.ValueScope = exports2.ValueScopeName = exports2.Scope = exports2.varKinds = exports2.UsedValueState = void 0;
   const code_12 = code$1;
   class ValueError extends Error {
     constructor(name) {
@@ -7269,8 +7267,8 @@ var scope = {};
   (function(UsedValueState2) {
     UsedValueState2[UsedValueState2["Started"] = 0] = "Started";
     UsedValueState2[UsedValueState2["Completed"] = 1] = "Completed";
-  })(UsedValueState || (exports.UsedValueState = UsedValueState = {}));
-  exports.varKinds = {
+  })(UsedValueState || (exports2.UsedValueState = UsedValueState = {}));
+  exports2.varKinds = {
     const: new code_12.Name("const"),
     let: new code_12.Name("let"),
     var: new code_12.Name("var")
@@ -7299,7 +7297,7 @@ var scope = {};
       return this._names[prefix] = { prefix, index: 0 };
     }
   }
-  exports.Scope = Scope;
+  exports2.Scope = Scope;
   class ValueScopeName extends code_12.Name {
     constructor(prefix, nameStr) {
       super(nameStr);
@@ -7310,7 +7308,7 @@ var scope = {};
       this.scopePath = (0, code_12._)`.${new code_12.Name(property)}[${itemIndex}]`;
     }
   }
-  exports.ValueScopeName = ValueScopeName;
+  exports2.ValueScopeName = ValueScopeName;
   const line = (0, code_12._)`\n`;
   class ValueScope extends Scope {
     constructor(opts) {
@@ -7380,7 +7378,7 @@ var scope = {};
           nameSet.set(name, UsedValueState.Started);
           let c = valueCode(name);
           if (c) {
-            const def2 = this.opts.es5 ? exports.varKinds.var : exports.varKinds.const;
+            const def2 = this.opts.es5 ? exports2.varKinds.var : exports2.varKinds.const;
             code2 = (0, code_12._)`${code2}${def2} ${name} = ${c};${this.opts._n}`;
           } else if (c = getCode === null || getCode === void 0 ? void 0 : getCode(name)) {
             code2 = (0, code_12._)`${code2}${c}${this.opts._n}`;
@@ -7393,52 +7391,52 @@ var scope = {};
       return code2;
     }
   }
-  exports.ValueScope = ValueScope;
+  exports2.ValueScope = ValueScope;
 })(scope);
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.or = exports.and = exports.not = exports.CodeGen = exports.operators = exports.varKinds = exports.ValueScopeName = exports.ValueScope = exports.Scope = exports.Name = exports.regexpCode = exports.stringify = exports.getProperty = exports.nil = exports.strConcat = exports.str = exports._ = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.or = exports2.and = exports2.not = exports2.CodeGen = exports2.operators = exports2.varKinds = exports2.ValueScopeName = exports2.ValueScope = exports2.Scope = exports2.Name = exports2.regexpCode = exports2.stringify = exports2.getProperty = exports2.nil = exports2.strConcat = exports2.str = exports2._ = void 0;
   const code_12 = code$1;
   const scope_1 = scope;
   var code_2 = code$1;
-  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "_", { enumerable: true, get: function() {
     return code_2._;
   } });
-  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "str", { enumerable: true, get: function() {
     return code_2.str;
   } });
-  Object.defineProperty(exports, "strConcat", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "strConcat", { enumerable: true, get: function() {
     return code_2.strConcat;
   } });
-  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "nil", { enumerable: true, get: function() {
     return code_2.nil;
   } });
-  Object.defineProperty(exports, "getProperty", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "getProperty", { enumerable: true, get: function() {
     return code_2.getProperty;
   } });
-  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "stringify", { enumerable: true, get: function() {
     return code_2.stringify;
   } });
-  Object.defineProperty(exports, "regexpCode", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "regexpCode", { enumerable: true, get: function() {
     return code_2.regexpCode;
   } });
-  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Name", { enumerable: true, get: function() {
     return code_2.Name;
   } });
   var scope_2 = scope;
-  Object.defineProperty(exports, "Scope", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Scope", { enumerable: true, get: function() {
     return scope_2.Scope;
   } });
-  Object.defineProperty(exports, "ValueScope", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "ValueScope", { enumerable: true, get: function() {
     return scope_2.ValueScope;
   } });
-  Object.defineProperty(exports, "ValueScopeName", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "ValueScopeName", { enumerable: true, get: function() {
     return scope_2.ValueScopeName;
   } });
-  Object.defineProperty(exports, "varKinds", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "varKinds", { enumerable: true, get: function() {
     return scope_2.varKinds;
   } });
-  exports.operators = {
+  exports2.operators = {
     GT: new code_12._Code(">"),
     GTE: new code_12._Code(">="),
     LT: new code_12._Code("<"),
@@ -7851,7 +7849,7 @@ var scope = {};
     }
     // `+=` code
     add(lhs, rhs) {
-      return this._leafNode(new AssignOp(lhs, exports.operators.ADD, rhs));
+      return this._leafNode(new AssignOp(lhs, exports2.operators.ADD, rhs));
     }
     // appends passed SafeExpr to code or executes Block
     code(c) {
@@ -8051,7 +8049,7 @@ var scope = {};
       ns[ns.length - 1] = node;
     }
   }
-  exports.CodeGen = CodeGen;
+  exports2.CodeGen = CodeGen;
   function addNames(names2, from) {
     for (const n in from)
       names2[n] = (names2[n] || 0) + (from[n] || 0);
@@ -8092,17 +8090,17 @@ var scope = {};
   function not2(x) {
     return typeof x == "boolean" || typeof x == "number" || x === null ? !x : (0, code_12._)`!${par(x)}`;
   }
-  exports.not = not2;
-  const andCode = mappend(exports.operators.AND);
+  exports2.not = not2;
+  const andCode = mappend(exports2.operators.AND);
   function and(...args) {
     return args.reduce(andCode);
   }
-  exports.and = and;
-  const orCode = mappend(exports.operators.OR);
+  exports2.and = and;
+  const orCode = mappend(exports2.operators.OR);
   function or(...args) {
     return args.reduce(orCode);
   }
-  exports.or = or;
+  exports2.or = or;
   function mappend(op) {
     return (x, y) => x === code_12.nil ? y : y === code_12.nil ? x : (0, code_12._)`${par(x)} ${op} ${par(y)}`;
   }
@@ -8304,19 +8302,19 @@ const names = {
   jsonPart: new codegen_1$u.Name("jsonPart")
 };
 names$1.default = names;
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.extendErrors = exports.resetErrorsCount = exports.reportExtraError = exports.reportError = exports.keyword$DataError = exports.keywordError = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.extendErrors = exports2.resetErrorsCount = exports2.reportExtraError = exports2.reportError = exports2.keyword$DataError = exports2.keywordError = void 0;
   const codegen_12 = codegen;
   const util_12 = util;
   const names_12 = names$1;
-  exports.keywordError = {
+  exports2.keywordError = {
     message: ({ keyword: keyword2 }) => (0, codegen_12.str)`must pass "${keyword2}" keyword validation`
   };
-  exports.keyword$DataError = {
+  exports2.keyword$DataError = {
     message: ({ keyword: keyword2, schemaType }) => schemaType ? (0, codegen_12.str)`"${keyword2}" keyword must be ${schemaType} ($data)` : (0, codegen_12.str)`"${keyword2}" keyword is invalid ($data)`
   };
-  function reportError(cxt, error2 = exports.keywordError, errorPaths, overrideAllErrors) {
+  function reportError(cxt, error2 = exports2.keywordError, errorPaths, overrideAllErrors) {
     const { it } = cxt;
     const { gen, compositeRule, allErrors } = it;
     const errObj = errorObjectCode(cxt, error2, errorPaths);
@@ -8326,8 +8324,8 @@ names$1.default = names;
       returnErrors(it, (0, codegen_12._)`[${errObj}]`);
     }
   }
-  exports.reportError = reportError;
-  function reportExtraError(cxt, error2 = exports.keywordError, errorPaths) {
+  exports2.reportError = reportError;
+  function reportExtraError(cxt, error2 = exports2.keywordError, errorPaths) {
     const { it } = cxt;
     const { gen, compositeRule, allErrors } = it;
     const errObj = errorObjectCode(cxt, error2, errorPaths);
@@ -8336,12 +8334,12 @@ names$1.default = names;
       returnErrors(it, names_12.default.vErrors);
     }
   }
-  exports.reportExtraError = reportExtraError;
+  exports2.reportExtraError = reportExtraError;
   function resetErrorsCount(gen, errsCount) {
     gen.assign(names_12.default.errors, errsCount);
     gen.if((0, codegen_12._)`${names_12.default.vErrors} !== null`, () => gen.if(errsCount, () => gen.assign((0, codegen_12._)`${names_12.default.vErrors}.length`, errsCount), () => gen.assign(names_12.default.vErrors, null)));
   }
-  exports.resetErrorsCount = resetErrorsCount;
+  exports2.resetErrorsCount = resetErrorsCount;
   function extendErrors({ gen, keyword: keyword2, schemaValue, data, errsCount, it }) {
     if (errsCount === void 0)
       throw new Error("ajv implementation error");
@@ -8356,7 +8354,7 @@ names$1.default = names;
       }
     });
   }
-  exports.extendErrors = extendErrors;
+  exports2.extendErrors = extendErrors;
   function addError(gen, errObj) {
     const err = gen.const("err", errObj);
     gen.if((0, codegen_12._)`${names_12.default.vErrors} === null`, () => gen.assign(names_12.default.vErrors, (0, codegen_12._)`[${err}]`), (0, codegen_12._)`${names_12.default.vErrors}.push(${err})`);
@@ -9276,7 +9274,7 @@ const keyword_1 = keyword;
 const subschema_1 = subschema;
 const codegen_1$n = codegen;
 const names_1$3 = names$1;
-const resolve_1$2 = resolve$1;
+const resolve_1$1 = resolve$1;
 const util_1$l = util;
 const errors_1 = errors;
 function validateFunctionCode(it) {
@@ -9403,7 +9401,7 @@ function checkNoDefault(it) {
 function updateContext(it) {
   const schId = it.schema[it.opts.schemaId];
   if (schId)
-    it.baseId = (0, resolve_1$2.resolveUrl)(it.opts.uriResolver, it.baseId, schId);
+    it.baseId = (0, resolve_1$1.resolveUrl)(it.opts.uriResolver, it.baseId, schId);
 }
 function checkAsyncSchema(it) {
   if (it.schema.$async && !it.schemaEnv.$async)
@@ -9420,9 +9418,9 @@ function commentKeyword({ gen, schemaEnv, schema, errSchemaPath, opts }) {
   }
 }
 function returnResults(it) {
-  const { gen, schemaEnv, validateName, ValidationError: ValidationError3, opts } = it;
+  const { gen, schemaEnv, validateName, ValidationError: ValidationError2, opts } = it;
   if (schemaEnv.$async) {
-    gen.if((0, codegen_1$n._)`${names_1$3.default.errors} === 0`, () => gen.return(names_1$3.default.data), () => gen.throw((0, codegen_1$n._)`new ${ValidationError3}(${names_1$3.default.vErrors})`));
+    gen.if((0, codegen_1$n._)`${names_1$3.default.errors} === 0`, () => gen.return(names_1$3.default.data), () => gen.throw((0, codegen_1$n._)`new ${ValidationError2}(${names_1$3.default.vErrors})`));
   } else {
     gen.assign((0, codegen_1$n._)`${validateName}.errors`, names_1$3.default.vErrors);
     if (opts.unevaluated)
@@ -9766,31 +9764,43 @@ function getData($data, { dataLevel, dataNames, dataPathArr }) {
 }
 validate.getData = getData;
 var validation_error = {};
-Object.defineProperty(validation_error, "__esModule", { value: true });
-class ValidationError2 extends Error {
-  constructor(errors2) {
-    super("validation failed");
-    this.errors = errors2;
-    this.ajv = this.validation = true;
+var hasRequiredValidation_error;
+function requireValidation_error() {
+  if (hasRequiredValidation_error) return validation_error;
+  hasRequiredValidation_error = 1;
+  Object.defineProperty(validation_error, "__esModule", { value: true });
+  class ValidationError2 extends Error {
+    constructor(errors2) {
+      super("validation failed");
+      this.errors = errors2;
+      this.ajv = this.validation = true;
+    }
   }
+  validation_error.default = ValidationError2;
+  return validation_error;
 }
-validation_error.default = ValidationError2;
 var ref_error = {};
-Object.defineProperty(ref_error, "__esModule", { value: true });
-const resolve_1$1 = resolve$1;
-class MissingRefError2 extends Error {
-  constructor(resolver, baseId, ref2, msg) {
-    super(msg || `can't resolve reference ${ref2} from id ${baseId}`);
-    this.missingRef = (0, resolve_1$1.resolveUrl)(resolver, baseId, ref2);
-    this.missingSchema = (0, resolve_1$1.normalizeId)((0, resolve_1$1.getFullPath)(resolver, this.missingRef));
+var hasRequiredRef_error;
+function requireRef_error() {
+  if (hasRequiredRef_error) return ref_error;
+  hasRequiredRef_error = 1;
+  Object.defineProperty(ref_error, "__esModule", { value: true });
+  const resolve_12 = resolve$1;
+  class MissingRefError2 extends Error {
+    constructor(resolver, baseId, ref2, msg) {
+      super(msg || `can't resolve reference ${ref2} from id ${baseId}`);
+      this.missingRef = (0, resolve_12.resolveUrl)(resolver, baseId, ref2);
+      this.missingSchema = (0, resolve_12.normalizeId)((0, resolve_12.getFullPath)(resolver, this.missingRef));
+    }
   }
+  ref_error.default = MissingRefError2;
+  return ref_error;
 }
-ref_error.default = MissingRefError2;
 var compile = {};
 Object.defineProperty(compile, "__esModule", { value: true });
 compile.resolveSchema = compile.getCompilingSchema = compile.resolveRef = compile.compileSchema = compile.SchemaEnv = void 0;
 const codegen_1$m = codegen;
-const validation_error_1 = validation_error;
+const validation_error_1 = requireValidation_error();
 const names_1$2 = names$1;
 const resolve_1 = resolve$1;
 const util_1$k = util;
@@ -10037,34 +10047,34 @@ Object.defineProperty(uri$1, "__esModule", { value: true });
 const uri = fastUriExports;
 uri.code = 'require("ajv/dist/runtime/uri").default';
 uri$1.default = uri;
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.CodeGen = exports2.Name = exports2.nil = exports2.stringify = exports2.str = exports2._ = exports2.KeywordCxt = void 0;
   var validate_12 = validate;
-  Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "KeywordCxt", { enumerable: true, get: function() {
     return validate_12.KeywordCxt;
   } });
   var codegen_12 = codegen;
-  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "_", { enumerable: true, get: function() {
     return codegen_12._;
   } });
-  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "str", { enumerable: true, get: function() {
     return codegen_12.str;
   } });
-  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "stringify", { enumerable: true, get: function() {
     return codegen_12.stringify;
   } });
-  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "nil", { enumerable: true, get: function() {
     return codegen_12.nil;
   } });
-  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Name", { enumerable: true, get: function() {
     return codegen_12.Name;
   } });
-  Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "CodeGen", { enumerable: true, get: function() {
     return codegen_12.CodeGen;
   } });
-  const validation_error_12 = validation_error;
-  const ref_error_12 = ref_error;
+  const validation_error_12 = requireValidation_error();
+  const ref_error_12 = requireRef_error();
   const rules_12 = rules;
   const compile_12 = compile;
   const codegen_2 = codegen;
@@ -10514,7 +10524,7 @@ uri$1.default = uri;
   }
   Ajv.ValidationError = validation_error_12.default;
   Ajv.MissingRefError = ref_error_12.default;
-  exports.default = Ajv;
+  exports2.default = Ajv;
   function checkOptions(checkOpts, options, msg, log = "error") {
     for (const key in checkOpts) {
       const opt = key;
@@ -10657,7 +10667,7 @@ id.default = def$s;
 var ref = {};
 Object.defineProperty(ref, "__esModule", { value: true });
 ref.callRef = ref.getValidate = void 0;
-const ref_error_1$1 = ref_error;
+const ref_error_1$1 = requireRef_error();
 const code_1$8 = code;
 const codegen_1$l = codegen;
 const names_1$1 = names$1;
@@ -11414,13 +11424,13 @@ const def$c = {
 };
 contains.default = def$c;
 var dependencies = {};
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.validateSchemaDeps = exports.validatePropertyDeps = exports.error = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.validateSchemaDeps = exports2.validatePropertyDeps = exports2.error = void 0;
   const codegen_12 = codegen;
   const util_12 = util;
   const code_12 = code;
-  exports.error = {
+  exports2.error = {
     message: ({ params: { property, depsCount, deps } }) => {
       const property_ies = depsCount === 1 ? "property" : "properties";
       return (0, codegen_12.str)`must have ${property_ies} ${deps} when property ${property} is present`;
@@ -11435,7 +11445,7 @@ var dependencies = {};
     keyword: "dependencies",
     type: "object",
     schemaType: "object",
-    error: exports.error,
+    error: exports2.error,
     code(cxt) {
       const [propDeps, schDeps] = splitDependencies(cxt);
       validatePropertyDeps(cxt, propDeps);
@@ -11481,7 +11491,7 @@ var dependencies = {};
       }
     }
   }
-  exports.validatePropertyDeps = validatePropertyDeps;
+  exports2.validatePropertyDeps = validatePropertyDeps;
   function validateSchemaDeps(cxt, schemaDeps = cxt.schema) {
     const { gen, data, keyword: keyword2, it } = cxt;
     const valid2 = gen.name("valid");
@@ -11500,8 +11510,8 @@ var dependencies = {};
       cxt.ok(valid2);
     }
   }
-  exports.validateSchemaDeps = validateSchemaDeps;
-  exports.default = def2;
+  exports2.validateSchemaDeps = validateSchemaDeps;
+  exports2.default = def2;
 })(dependencies);
 var propertyNames = {};
 Object.defineProperty(propertyNames, "__esModule", { value: true });
@@ -12119,7 +12129,7 @@ Object.defineProperty(discriminator, "__esModule", { value: true });
 const codegen_1 = codegen;
 const types_1 = types;
 const compile_1 = compile;
-const ref_error_1 = ref_error;
+const ref_error_1 = requireRef_error();
 const util_1 = util;
 const error = {
   message: ({ params: { discrError, tagName } }) => discrError === types_1.DiscrError.Tag ? `tag "${tagName}" must be string` : `value of tag "${tagName}" must be in oneOf`,
@@ -12460,9 +12470,9 @@ const require$$3 = {
   properties,
   "default": true
 };
-(function(module, exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv = void 0;
+(function(module2, exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.MissingRefError = exports2.ValidationError = exports2.CodeGen = exports2.Name = exports2.nil = exports2.stringify = exports2.str = exports2._ = exports2.KeywordCxt = exports2.Ajv = void 0;
   const core_12 = core$2;
   const draft7_1 = draft7;
   const discriminator_1 = discriminator;
@@ -12488,47 +12498,47 @@ const require$$3 = {
       return this.opts.defaultMeta = super.defaultMeta() || (this.getSchema(META_SCHEMA_ID) ? META_SCHEMA_ID : void 0);
     }
   }
-  exports.Ajv = Ajv;
-  module.exports = exports = Ajv;
-  module.exports.Ajv = Ajv;
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.default = Ajv;
+  exports2.Ajv = Ajv;
+  module2.exports = exports2 = Ajv;
+  module2.exports.Ajv = Ajv;
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.default = Ajv;
   var validate_12 = validate;
-  Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "KeywordCxt", { enumerable: true, get: function() {
     return validate_12.KeywordCxt;
   } });
   var codegen_12 = codegen;
-  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "_", { enumerable: true, get: function() {
     return codegen_12._;
   } });
-  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "str", { enumerable: true, get: function() {
     return codegen_12.str;
   } });
-  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "stringify", { enumerable: true, get: function() {
     return codegen_12.stringify;
   } });
-  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "nil", { enumerable: true, get: function() {
     return codegen_12.nil;
   } });
-  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "Name", { enumerable: true, get: function() {
     return codegen_12.Name;
   } });
-  Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
+  Object.defineProperty(exports2, "CodeGen", { enumerable: true, get: function() {
     return codegen_12.CodeGen;
   } });
-  var validation_error_12 = validation_error;
-  Object.defineProperty(exports, "ValidationError", { enumerable: true, get: function() {
+  var validation_error_12 = requireValidation_error();
+  Object.defineProperty(exports2, "ValidationError", { enumerable: true, get: function() {
     return validation_error_12.default;
   } });
-  var ref_error_12 = ref_error;
-  Object.defineProperty(exports, "MissingRefError", { enumerable: true, get: function() {
+  var ref_error_12 = requireRef_error();
+  Object.defineProperty(exports2, "MissingRefError", { enumerable: true, get: function() {
     return ref_error_12.default;
   } });
 })(ajv, ajv.exports);
 var ajvExports = ajv.exports;
-(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.formatLimitDefinition = void 0;
+(function(exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.formatLimitDefinition = void 0;
   const ajv_1 = ajvExports;
   const codegen_12 = codegen;
   const ops2 = codegen_12.operators;
@@ -12542,7 +12552,7 @@ var ajvExports = ajv.exports;
     message: ({ keyword: keyword2, schemaCode }) => codegen_12.str`should be ${KWDs2[keyword2].okStr} ${schemaCode}`,
     params: ({ keyword: keyword2, schemaCode }) => codegen_12._`{comparison: ${KWDs2[keyword2].okStr}, limit: ${schemaCode}}`
   };
-  exports.formatLimitDefinition = {
+  exports2.formatLimitDefinition = {
     keyword: Object.keys(KWDs2),
     type: "string",
     schemaType: "string",
@@ -12588,13 +12598,13 @@ var ajvExports = ajv.exports;
     dependencies: ["format"]
   };
   const formatLimitPlugin = (ajv2) => {
-    ajv2.addKeyword(exports.formatLimitDefinition);
+    ajv2.addKeyword(exports2.formatLimitDefinition);
     return ajv2;
   };
-  exports.default = formatLimitPlugin;
+  exports2.default = formatLimitPlugin;
 })(limit);
-(function(module, exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
+(function(module2, exports2) {
+  Object.defineProperty(exports2, "__esModule", { value: true });
   const formats_1 = formats;
   const limit_1 = limit;
   const codegen_12 = codegen;
@@ -12626,9 +12636,9 @@ var ajvExports = ajv.exports;
     for (const f of list)
       ajv2.addFormat(f, fs2[f]);
   }
-  module.exports = exports = formatsPlugin;
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.default = formatsPlugin;
+  module2.exports = exports2 = formatsPlugin;
+  Object.defineProperty(exports2, "__esModule", { value: true });
+  exports2.default = formatsPlugin;
 })(dist, dist.exports);
 var distExports = dist.exports;
 const copyProperty = (to, from, property, ignoreNonConfigurable) => {
@@ -12744,19 +12754,19 @@ var constants$1 = {
 const debug$1 = typeof process === "object" && process.env && process.env.NODE_DEBUG && /\bsemver\b/i.test(process.env.NODE_DEBUG) ? (...args) => console.error("SEMVER", ...args) : () => {
 };
 var debug_1 = debug$1;
-(function(module, exports) {
+(function(module2, exports2) {
   const {
     MAX_SAFE_COMPONENT_LENGTH: MAX_SAFE_COMPONENT_LENGTH2,
     MAX_SAFE_BUILD_LENGTH: MAX_SAFE_BUILD_LENGTH2,
     MAX_LENGTH: MAX_LENGTH2
   } = constants$1;
   const debug2 = debug_1;
-  exports = module.exports = {};
-  const re2 = exports.re = [];
-  const safeRe = exports.safeRe = [];
-  const src = exports.src = [];
-  const safeSrc = exports.safeSrc = [];
-  const t2 = exports.t = {};
+  exports2 = module2.exports = {};
+  const re2 = exports2.re = [];
+  const safeRe = exports2.safeRe = [];
+  const src = exports2.src = [];
+  const safeSrc = exports2.safeSrc = [];
+  const t2 = exports2.t = {};
   let R = 0;
   const LETTERDASHNUMBER = "[a-zA-Z0-9-]";
   const safeRegexReplacements = [
@@ -12809,18 +12819,18 @@ var debug_1 = debug$1;
   createToken("COERCERTLFULL", src[t2.COERCEFULL], true);
   createToken("LONETILDE", "(?:~>?)");
   createToken("TILDETRIM", `(\\s*)${src[t2.LONETILDE]}\\s+`, true);
-  exports.tildeTrimReplace = "$1~";
+  exports2.tildeTrimReplace = "$1~";
   createToken("TILDE", `^${src[t2.LONETILDE]}${src[t2.XRANGEPLAIN]}$`);
   createToken("TILDELOOSE", `^${src[t2.LONETILDE]}${src[t2.XRANGEPLAINLOOSE]}$`);
   createToken("LONECARET", "(?:\\^)");
   createToken("CARETTRIM", `(\\s*)${src[t2.LONECARET]}\\s+`, true);
-  exports.caretTrimReplace = "$1^";
+  exports2.caretTrimReplace = "$1^";
   createToken("CARET", `^${src[t2.LONECARET]}${src[t2.XRANGEPLAIN]}$`);
   createToken("CARETLOOSE", `^${src[t2.LONECARET]}${src[t2.XRANGEPLAINLOOSE]}$`);
   createToken("COMPARATORLOOSE", `^${src[t2.GTLT]}\\s*(${src[t2.LOOSEPLAIN]})$|^$`);
   createToken("COMPARATOR", `^${src[t2.GTLT]}\\s*(${src[t2.FULLPLAIN]})$|^$`);
   createToken("COMPARATORTRIM", `(\\s*)${src[t2.GTLT]}\\s*(${src[t2.LOOSEPLAIN]}|${src[t2.XRANGEPLAIN]})`, true);
-  exports.comparatorTrimReplace = "$1$2$3";
+  exports2.comparatorTrimReplace = "$1$2$3";
   createToken("HYPHENRANGE", `^\\s*(${src[t2.XRANGEPLAIN]})\\s+-\\s+(${src[t2.XRANGEPLAIN]})\\s*$`);
   createToken("HYPHENRANGELOOSE", `^\\s*(${src[t2.XRANGEPLAINLOOSE]})\\s+-\\s+(${src[t2.XRANGEPLAINLOOSE]})\\s*$`);
   createToken("STAR", "(<|>)?=?\\s*\\*");
@@ -14363,7 +14373,7 @@ onetime$1.exports.callCount = (function_) => {
   return calledFunctions.get(function_);
 };
 var onetimeExports = onetime$1.exports;
-(function(module, exports) {
+(function(module2, exports2) {
   var __classPrivateFieldSet = commonjsGlobal && commonjsGlobal.__classPrivateFieldSet || function(receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -14377,7 +14387,7 @@ var onetimeExports = onetime$1.exports;
   };
   var _a, _b;
   var _Conf_validator, _Conf_encryptionKey, _Conf_options, _Conf_defaultValues;
-  Object.defineProperty(exports, "__esModule", { value: true });
+  Object.defineProperty(exports2, "__esModule", { value: true });
   const util_12 = require$$1$1;
   const fs2 = fs$3;
   const path2 = path$6;
@@ -14403,7 +14413,7 @@ var onetimeExports = onetime$1.exports;
   let parentDir = "";
   try {
     delete require.cache[__filename];
-    parentDir = path2.dirname((_b = (_a = module.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
+    parentDir = path2.dirname((_b = (_a = module2.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
   } catch (_c) {
   }
   const checkValueType = (key, value) => {
@@ -14816,9 +14826,9 @@ var onetimeExports = onetime$1.exports;
       this.store = store2;
     }
   }
-  exports.default = Conf2;
-  module.exports = Conf2;
-  module.exports.default = Conf2;
+  exports2.default = Conf2;
+  module2.exports = Conf2;
+  module2.exports.default = Conf2;
 })(source, source.exports);
 var sourceExports = source.exports;
 const path = path$6;
@@ -14886,11 +14896,11 @@ const Store = /* @__PURE__ */ getDefaultExportFromCjs(electronStore);
 const store = new Store({
   defaults: { tasks: [], nextId: 1 }
 });
-ipcMain$1.handle("db:getTasks", () => {
+require$$1$2.ipcMain.handle("db:getTasks", () => {
   const tasks = store.get("tasks");
   return tasks.slice().sort((a, b) => b.id - a.id);
 });
-ipcMain$1.handle("db:addTask", (_event, task) => {
+require$$1$2.ipcMain.handle("db:addTask", (_event, task) => {
   const tasks = store.get("tasks");
   const id2 = store.get("nextId");
   const status = task.status ?? "todo";
@@ -14899,7 +14909,7 @@ ipcMain$1.handle("db:addTask", (_event, task) => {
   store.set("nextId", id2 + 1);
   return newTask;
 });
-ipcMain$1.handle("db:updateTask", (_event, task) => {
+require$$1$2.ipcMain.handle("db:updateTask", (_event, task) => {
   const tasks = store.get("tasks");
   const idx = tasks.findIndex((t2) => t2.id === task.id);
   if (idx === -1) {
@@ -14916,13 +14926,13 @@ ipcMain$1.handle("db:updateTask", (_event, task) => {
   store.set("tasks", newTasks);
   return updated;
 });
-ipcMain$1.handle("db:deleteTask", (_event, id2) => {
+require$$1$2.ipcMain.handle("db:deleteTask", (_event, id2) => {
   const tasks = store.get("tasks");
   const newTasks = tasks.filter((t2) => t2.id !== id2);
   store.set("tasks", newTasks);
   return { id: id2 };
 });
-ipcMain$1.handle("db:query", () => {
+require$$1$2.ipcMain.handle("db:query", () => {
   throw new Error("db:query is not supported when using electron-store");
 });
 async function generate(prompt) {
@@ -14934,25 +14944,23 @@ async function embedText(_text) {
 async function search(_query) {
   return [];
 }
-ipcMain$1.handle("ai:generate", async (_event, prompt) => {
+require$$1$2.ipcMain.handle("ai:generate", async (_event, prompt) => {
   return generate(prompt);
 });
-ipcMain$1.handle("ai:embedText", async (_event, text) => {
+require$$1$2.ipcMain.handle("ai:embedText", async (_event, text) => {
   return embedText();
 });
-ipcMain$1.handle("ai:search", async (_event, query) => {
+require$$1$2.ipcMain.handle("ai:search", async (_event, query) => {
   return search();
 });
-ipcMain$1.handle("sys:openExternal", async (_event, url) => {
-  await shell$1.openExternal(url);
+require$$1$2.ipcMain.handle("sys:openExternal", async (_event, url) => {
+  await require$$1$2.shell.openExternal(url);
 });
-ipcMain$1.handle("sys:log", async (_event, message) => {
+require$$1$2.ipcMain.handle("sys:log", async (_event, message) => {
   console.log(`[Renderer] ${message}`);
 });
-const __filename$2 = fileURLToPath(import.meta.url);
-const __dirname$1 = path$6.dirname(__filename$2);
 async function ensureResources() {
-  const root = path$6.resolve(__dirname$1, "..");
+  const root = path$6.resolve(__dirname, "..");
   const resourcesDir = path$6.join(root, "resources");
   const modelsDir = path$6.join(resourcesDir, "models", "gemma3-270m");
   const pythonRuntimeDir = path$6.join(resourcesDir, "python-runtime");
@@ -14976,37 +14984,36 @@ async function ensureResources() {
 ensureResources().catch((err) => {
   console.error("Error in first-run:", err);
 });
-const __filename$1 = fileURLToPath$1(import.meta.url);
-const __dirname = path$7.dirname(__filename$1);
-process.env.APP_ROOT = path$7.join(__dirname, "..");
+const resolvedDir = __dirname;
+process.env.APP_ROOT = path$6.join(resolvedDir, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-const MAIN_DIST = path$7.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path$7.join(process.env.APP_ROOT, "dist/renderer");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$7.join(process.env.APP_ROOT, "renderer/public") : RENDERER_DIST;
+const MAIN_DIST = path$6.join(process.env.APP_ROOT, "dist-electron");
+const RENDERER_DIST = path$6.join(process.env.APP_ROOT, "dist/renderer");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$6.join(process.env.APP_ROOT, "renderer/public") : RENDERER_DIST;
 const iconCandidates = ["gidit-logo.png"];
 function loadAppIcon() {
   const appRoot = process.env.APP_ROOT ?? "";
   const searchRoots = [
     process.env.VITE_PUBLIC,
-    path$7.join(appRoot, "renderer/public"),
-    path$7.resolve(appRoot, "..", "renderer/public"),
-    path$7.join(appRoot, "public"),
-    path$7.resolve(appRoot, "..", "public"),
-    path$7.join(appRoot, "dist/renderer"),
-    path$7.resolve(appRoot, "..", "dist/renderer")
-  ].filter((dir) => Boolean(dir)).map((dir) => path$7.normalize(dir));
+    path$6.join(appRoot, "renderer/public"),
+    path$6.resolve(appRoot, "..", "renderer/public"),
+    path$6.join(appRoot, "public"),
+    path$6.resolve(appRoot, "..", "public"),
+    path$6.join(appRoot, "dist/renderer"),
+    path$6.resolve(appRoot, "..", "dist/renderer")
+  ].filter((dir) => Boolean(dir)).map((dir) => path$6.normalize(dir));
   console.log("[icon] search roots:", searchRoots);
   for (const root of searchRoots) {
     for (const candidate of iconCandidates) {
-      const absolute = path$7.join(root, candidate);
-      if (!existsSync(absolute)) {
+      const absolute = path$6.join(root, candidate);
+      if (!fs$3.existsSync(absolute)) {
         continue;
       }
       try {
-        let image = nativeImage.createFromPath(absolute);
+        let image = require$$1$2.nativeImage.createFromPath(absolute);
         if (image.isEmpty()) {
-          const buffer = readFileSync$1(absolute);
-          image = nativeImage.createFromBuffer(buffer);
+          const buffer = fs$3.readFileSync(absolute);
+          image = require$$1$2.nativeImage.createFromBuffer(buffer);
         }
         if (!image.isEmpty()) {
           const resized = image.resize({ width: 512, height: 512 });
@@ -15028,19 +15035,19 @@ async function loadRenderer(win) {
     await win.loadURL(VITE_DEV_SERVER_URL);
     win.webContents.openDevTools({ mode: "detach" });
   } else {
-    const indexPath = path$7.join(RENDERER_DIST, "index.html");
+    const indexPath = path$6.join(RENDERER_DIST, "index.html");
     await win.loadFile(indexPath);
   }
 }
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  mainWindow = new require$$1$2.BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 1024,
     minHeight: 640,
     icon: logoIcon ?? logoPath,
     webPreferences: {
-      preload: path$7.join(__dirname, "preload.js"),
+      preload: path$6.join(resolvedDir, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -15049,38 +15056,36 @@ function createWindow() {
     console.error("Failed to load renderer:", error2);
   });
 }
-if (!app$1.requestSingleInstanceLock()) {
-  app$1.quit();
+if (!require$$1$2.app.requestSingleInstanceLock()) {
+  require$$1$2.app.quit();
 } else {
-  app$1.on("second-instance", () => {
+  require$$1$2.app.on("second-instance", () => {
     if (!mainWindow) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
   });
-  app$1.on("ready", async () => {
-    protocol.registerFileProtocol("app", (request, callback) => {
+  require$$1$2.app.on("ready", async () => {
+    require$$1$2.protocol.registerFileProtocol("app", (request, callback) => {
       const url = request.url.slice(6);
-      callback({ path: path$7.normalize(`${__dirname}/${url}`) });
+      callback({ path: path$6.normalize(`${resolvedDir}/${url}`) });
     });
     if (process.platform === "darwin" && logoIcon) {
-      app$1.dock.setIcon(logoIcon);
+      require$$1$2.app.dock.setIcon(logoIcon);
     }
     createWindow();
   });
 }
-app$1.on("window-all-closed", () => {
+require$$1$2.app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    app$1.quit();
+    require$$1$2.app.quit();
     mainWindow = null;
   }
 });
-app$1.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+require$$1$2.app.on("activate", () => {
+  if (require$$1$2.BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
-export {
-  MAIN_DIST,
-  RENDERER_DIST,
-  VITE_DEV_SERVER_URL
-};
+exports.MAIN_DIST = MAIN_DIST;
+exports.RENDERER_DIST = RENDERER_DIST;
+exports.VITE_DEV_SERVER_URL = VITE_DEV_SERVER_URL;

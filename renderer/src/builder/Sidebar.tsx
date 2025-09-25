@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as LucideIcons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -14,6 +14,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
   SidebarInset,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,41 @@ import { useBuilderStore } from './store'
 import { WIDGETS, WIDGET_CATEGORIES } from './widgets'
 import type { Page } from './Types'
 import { AiAssistant } from '@/components/help/AiAssistant'
+import { AppSettingsDialog } from '@/components/layout/AppSettingsDialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
+
+const ICON_CHOICES = [
+  'LayoutDashboard',
+  'KanbanSquare',
+  'BarChart3',
+  'PieChart',
+  'Calendar',
+  'FileText',
+  'LineChart',
+  'ListChecks',
+  'NotebookPen',
+  'Target',
+  'TrendingUp',
+  'Globe',
+  'MessageSquare',
+  'Users',
+  'UserCog',
+  'Bot',
+  'Sparkles',
+  'Shield',
+  'ShoppingCart',
+  'Briefcase',
+  'WalletCards',
+  'Folder',
+  'ClipboardList',
+  'Clock',
+  'Star',
+  'Lightbulb',
+  'ChartColumnIncreasing',
+  'Gauge',
+  'Brain',
+]
 
 function PageNameEditor({ page, onSave }: { page: Page; onSave: (name: string) => void }) {
   const [value, setValue] = useState(page.name)
@@ -72,49 +108,133 @@ function PageList() {
   const { pages, activePageId, setActivePage, updatePage, deletePage, addPage } = useBuilderStore()
   const IconFallback = LayoutDashboard
   const iconMap = LucideIcons as unknown as Record<string, LucideIcon>
+  const { state: sidebarState } = useSidebar()
+  const isSidebarExpanded = sidebarState === 'expanded'
+  const [iconPickerPageId, setIconPickerPageId] = useState<string | null>(null)
+  const [iconSearch, setIconSearch] = useState('')
+  const iconPickerOpen = iconPickerPageId !== null
+  const availableIconChoices = useMemo(
+    () => ICON_CHOICES.filter((iconName) => iconMap[iconName]),
+    [iconMap],
+  )
+  const filteredIcons = useMemo(() => {
+    const query = iconSearch.trim().toLowerCase()
+    if (!query) return availableIconChoices
+    return availableIconChoices.filter((iconName) => iconName.toLowerCase().includes(query))
+  }, [iconSearch, availableIconChoices])
+  const pickerPage = iconPickerPageId ? pages.find((page) => page.id === iconPickerPageId) ?? null : null
+
+  useEffect(() => {
+    if (!iconPickerOpen) {
+      setIconSearch('')
+    }
+  }, [iconPickerOpen])
 
   return (
-    <SidebarMenu>
-      {pages.map((page) => {
-        const IconComponent = iconMap[page.icon] ?? IconFallback
-        return (
-          <SidebarMenuItem key={page.id}>
-            <SidebarMenuButton
-              onClick={() => setActivePage(page.id)}
-              isActive={page.id === activePageId}
-              className="justify-start h-8"
-            >
-              <IconComponent className="h-5 w-5" />
-              <PageNameEditor page={page} onSave={(name) => updatePage(page.id, { name })} />
-            </SidebarMenuButton>
-            <SidebarMenuAction
-              onClick={() => {
-                if (pages.length <= 1) return
-                if (window.confirm(`Delete page "${page.name}"?`)) {
-                  deletePage(page.id)
-                }
-              }}
-              showOnHover
-            >
-              <Trash2 className="h-4 w-4" />
-            </SidebarMenuAction>
-          </SidebarMenuItem>
-        )
-      })}
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          onClick={() => {
-            const name = `Page ${pages.length + 1}`
-            const id = addPage(name)
-            setActivePage(id)
-          }}
-          className="justify-start h-8"
-        >
-          <PlusCircle className="h-5 w-5" />
-          <span>Add Page</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    </SidebarMenu>
+    <>
+      <SidebarMenu>
+        {pages.map((page) => {
+          const IconComponent = iconMap[page.icon] ?? IconFallback
+          return (
+            <SidebarMenuItem key={page.id}>
+              <SidebarMenuButton
+                onClick={() => setActivePage(page.id)}
+                isActive={page.id === activePageId}
+                className="justify-start h-8"
+              >
+                <button
+                  type="button"
+                  className={cn(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-muted/40 text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    page.id === activePageId && 'text-foreground',
+                  )}
+                  onClick={(event) => {
+                    if (!isSidebarExpanded) return
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setIconPickerPageId(page.id)
+                  }}
+                  aria-label={`Change icon for ${page.name}`}
+                >
+                  <IconComponent className="h-5 w-5" />
+                </button>
+                <PageNameEditor page={page} onSave={(name) => updatePage(page.id, { name })} />
+              </SidebarMenuButton>
+              <SidebarMenuAction
+                onClick={() => {
+                  if (pages.length <= 1) return
+                  if (window.confirm(`Delete page "${page.name}"?`)) {
+                    deletePage(page.id)
+                  }
+                }}
+                showOnHover
+              >
+                <Trash2 className="h-4 w-4" />
+              </SidebarMenuAction>
+            </SidebarMenuItem>
+          )
+        })}
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            onClick={() => {
+              const name = `Page ${pages.length + 1}`
+              const id = addPage(name)
+              setActivePage(id)
+            }}
+            className="justify-start h-8"
+          >
+            <PlusCircle className="h-5 w-5" />
+            <span>Add Page</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      <Dialog
+        open={iconPickerOpen}
+        onOpenChange={(open) => {
+          if (!open) setIconPickerPageId(null)
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Select a page icon</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              value={iconSearch}
+              onChange={(event) => setIconSearch(event.target.value)}
+              placeholder="Search icons"
+              className="h-8"
+            />
+            <ScrollArea className="max-h-80 pr-2">
+              <div className="grid grid-cols-4 gap-2">
+                {filteredIcons.map((iconName) => {
+                  const Icon = iconMap[iconName] ?? IconFallback
+                  const isActive = pickerPage?.icon === iconName
+                  return (
+                    <button
+                      key={iconName}
+                      type="button"
+                      className={cn(
+                        'flex flex-col items-center gap-1 rounded-lg border bg-background px-3 py-2 text-xs text-muted-foreground transition hover:border-primary/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        isActive && 'border-primary text-foreground shadow-sm',
+                      )}
+                      onClick={() => {
+                        if (!pickerPage) return
+                        updatePage(pickerPage.id, { icon: iconName })
+                        setIconPickerPageId(null)
+                      }}
+                    >
+                      <Icon className="h-6 w-6" />
+                      <span className="truncate">{iconName}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
@@ -229,10 +349,12 @@ function SidebarFooterMenu({ onOpenAssistant }: { onOpenAssistant: () => void })
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton className="h-8 justify-start">
-          <Settings className="h-4 w-4" />
-          <span className="group-data-[state=collapsed]:hidden">Settings</span>
-        </SidebarMenuButton>
+        <AppSettingsDialog>
+          <SidebarMenuButton className="h-8 justify-start">
+            <Settings className="h-4 w-4" />
+            <span className="group-data-[state=collapsed]:hidden">Settings</span>
+          </SidebarMenuButton>
+        </AppSettingsDialog>
       </SidebarMenuItem>
       <SidebarMenuItem>
         <SidebarMenuButton className="h-8 justify-start">

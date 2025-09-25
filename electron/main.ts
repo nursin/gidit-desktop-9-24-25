@@ -1,17 +1,15 @@
 import { app, BrowserWindow, nativeImage, protocol } from 'electron'
-import { existsSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
+import fs from 'fs'
+import path from 'path'
 
 import './ipc/db.ipc.js'
 import './ipc/ai.ipc.js'
 import './ipc/sys.ipc.js'
 import '../scripts/first-run.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const resolvedDir = __dirname
 
-process.env.APP_ROOT = path.join(__dirname, '..')
+process.env.APP_ROOT = path.join(resolvedDir, '..')
 
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
@@ -42,7 +40,7 @@ function loadAppIcon(): { image?: Electron.NativeImage; path?: string } {
   for (const root of searchRoots) {
     for (const candidate of iconCandidates) {
       const absolute = path.join(root, candidate)
-      if (!existsSync(absolute)) {
+      if (!fs.existsSync(absolute)) {
         continue
       }
 
@@ -50,7 +48,7 @@ function loadAppIcon(): { image?: Electron.NativeImage; path?: string } {
         let image = nativeImage.createFromPath(absolute)
 
         if (image.isEmpty()) {
-          const buffer = readFileSync(absolute)
+          const buffer = fs.readFileSync(absolute)
           image = nativeImage.createFromBuffer(buffer)
         }
 
@@ -91,7 +89,7 @@ function createWindow() {
     minHeight: 640,
     icon: logoIcon ?? logoPath,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(resolvedDir, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -114,7 +112,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('ready', async () => {
     protocol.registerFileProtocol('app', (request, callback) => {
       const url = request.url.slice(6)
-      callback({ path: path.normalize(`${__dirname}/${url}`) })
+      callback({ path: path.normalize(`${resolvedDir}/${url}`) })
     })
 
     if (process.platform === 'darwin' && logoIcon) {

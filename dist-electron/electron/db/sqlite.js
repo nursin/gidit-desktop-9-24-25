@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Deprecated database module.
  *
@@ -7,4 +8,4 @@
  * module remains as a placeholder so that imports do not break if
  * referenced elsewhere, but it no longer provides any functionality.
  */
-export {};
+Object.defineProperty(exports, "__esModule", { value: true });
