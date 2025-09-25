@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { templates, type Template } from './TemplateData'
 import { Item } from './Types'
 import { WIDGETS } from './widgets'
+import { ArrowLeft } from 'lucide-react'
 
 function TemplatePreview({ items }: { items: Omit<Item, 'id'>[] }) {
   return (
@@ -25,12 +26,18 @@ function TemplatePreview({ items }: { items: Omit<Item, 'id'>[] }) {
   )
 }
 
-export function Templates({ onUseTemplate }: { onUseTemplate: (template: Template) => void }) {
+export function Templates({ onUseTemplate, onBack }: { onUseTemplate: (template: Template) => void; onBack: () => void }) {
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="border-b px-6 py-4">
-        <p className="text-sm text-muted-foreground">Start quickly</p>
-        <h1 className="text-xl font-semibold">Template gallery</h1>
+      <header className="flex items-center justify-between border-b px-6 py-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Start quickly</p>
+          <h1 className="text-xl font-semibold">Template gallery</h1>
+        </div>
+        <Button variant="ghost" onClick={onBack} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Back to builder
+        </Button>
       </header>
       <ScrollArea className="flex-1">
         <div className="grid gap-6 p-6 md:grid-cols-2 xl:grid-cols-3">

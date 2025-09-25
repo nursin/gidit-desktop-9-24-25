@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card } from '@/components/ui/card'
 import { GiditLogo } from '@/components/icons/GiditLogo'
-import { LayoutDashboard, LayoutTemplate, PlusCircle, Trash2, Settings, LogOut, Bot } from 'lucide-react'
+import { LayoutDashboard, LayoutTemplate, PlusCircle, Trash2, Settings, LogOut, Bot, Eraser } from 'lucide-react'
 import { useBuilderStore } from '@/store/builderStore'
 import { WIDGETS, WIDGET_CATEGORIES } from './widgets'
 import type { Page } from './Types'
@@ -406,7 +406,13 @@ function ComponentPalette() {
   )
 }
 
-function SidebarFooterMenu({ onOpenAssistant, onOpenSettings }: { onOpenAssistant: () => void; onOpenSettings: () => void }) {
+function SidebarFooterMenu({
+  onOpenAssistant,
+  onOpenSettings,
+}: {
+  onOpenAssistant: () => void
+  onOpenSettings: () => void
+}) {
   const { state: sidebarState } = useSidebar()
   const isSidebarExpanded = sidebarState === 'expanded'
 
@@ -495,6 +501,7 @@ function SidebarFooterMenu({ onOpenAssistant, onOpenSettings }: { onOpenAssistan
 export function BuilderSidebar() {
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const { view } = useBuilderStore()
   const { state: sidebarState } = useSidebar()
   const isSidebarExpanded = sidebarState === 'expanded'
 
@@ -521,12 +528,12 @@ export function BuilderSidebar() {
           <div className="p-2">
             <PageList />
           </div>
-          {isSidebarExpanded && (
+          {view === 'canvas' && isSidebarExpanded ? (
             <>
               <SidebarSeparator />
               <ComponentPalette />
             </>
-          )}
+          ) : null}
         </ScrollArea>
         <div className="p-2">
           <SidebarFooterMenu
@@ -535,17 +542,7 @@ export function BuilderSidebar() {
           />
         </div>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <LayoutDashboard className="h-4 w-4" />
-          </div>
-          <div className="group-data-[state=collapsed]:hidden">
-            <p className="text-sm font-semibold">Workspace</p>
-            <p className="text-xs text-muted-foreground">Welcome back</p>
-          </div>
-        </div>
-      </SidebarFooter>
+      <SidebarFooter />
       <AiAssistant open={assistantOpen} onOpenChange={setAssistantOpen} />
       <AppSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </Sidebar>

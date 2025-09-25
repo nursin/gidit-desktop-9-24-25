@@ -20,9 +20,6 @@ function App() {
               <Route path="*" element={<Navigate to="/builder" replace />} />
             </Routes>
           </main>
-          <footer className="border-t px-6 py-4 text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Gidit. All rights reserved.
-          </footer>
           <Toaster />
         </div>
       </SettingsProvider>

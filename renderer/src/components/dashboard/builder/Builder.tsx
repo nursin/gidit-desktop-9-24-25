@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button'
 import { Canvas } from './Canvas'
 import { Templates } from './Templates'
 import { BuilderSidebar, SidebarInset, SidebarProvider } from './Sidebar'
@@ -14,7 +13,6 @@ function BuilderLayout() {
     updateWidget,
     duplicateWidget,
     moveWidget,
-    clearPage,
     applyTemplate,
     setView,
   } = useBuilderStore()
@@ -40,41 +38,26 @@ function BuilderLayout() {
       <div className="flex h-svh bg-background">
         <BuilderSidebar />
         <SidebarInset
-          className="w-full transition-[padding] md:pl-[var(--sidebar-width)] md:peer-data-[collapsible=icon]:pl-[var(--sidebar-width-icon)] md:peer-data-[collapsible=offcanvas]:pl-0"
+          className="w-full transition-[padding] md:pl-[var(--sidebar-width-icon)] md:peer-data-[state=expanded]:pl-[var(--sidebar-width)] md:peer-data-[collapsible=offcanvas]:pl-0"
         >
           {view === 'canvas' ? (
-            <div className="flex h-full flex-1 flex-col">
-              <header className="flex items-center justify-between border-b px-6 py-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active page</p>
-                  <h1 className="text-xl font-semibold">{activePage.name}</h1>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button variant="ghost" onClick={() => setView('templates')}>
-                    Browse templates
-                  </Button>
-                  <Button variant="outline" onClick={() => clearPage()}>
-                    Clear page
-                  </Button>
-                </div>
-              </header>
-              <Canvas
-                items={activePage.items}
-                onRemoveWidget={removeWidget}
-                onSizeChange={(id, size) => updateWidget(id, size)}
-                onNameChange={(id, name) => updateWidget(id, { name })}
-                onPropChange={(id, props) => updateWidget(id, props)}
-                onDropWidget={addWidget}
-                onDuplicateWidget={duplicateWidget}
-                onMoveWidget={moveWidget}
-              />
-            </div>
+            <Canvas
+              items={activePage.items}
+              onRemoveWidget={removeWidget}
+              onSizeChange={(id, size) => updateWidget(id, size)}
+              onNameChange={(id, name) => updateWidget(id, { name })}
+              onPropChange={(id, props) => updateWidget(id, props)}
+              onDropWidget={addWidget}
+              onDuplicateWidget={duplicateWidget}
+              onMoveWidget={moveWidget}
+            />
           ) : (
             <Templates
               onUseTemplate={(template) => {
                 applyTemplate(template)
                 setView('canvas')
               }}
+              onBack={() => setView('canvas')}
             />
           )}
         </SidebarInset>
