@@ -43,7 +43,7 @@ export function Canvas({
   return (
     <div
       ref={surfaceRef}
-      className="flex flex-1 flex-col overflow-y-auto"
+      className="flex w-full flex-1 flex-col overflow-y-auto"
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes('application/widget-id')) {
           event.preventDefault()
@@ -59,7 +59,7 @@ export function Canvas({
         </div>
       ) : (
         <div
-          className="grid flex-1 gap-5 p-6"
+          className="grid w-full flex-1 gap-5 p-6"
           style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridAutoRows: `${CELL_HEIGHT}px` }}
         >
           {items.map((item) => (

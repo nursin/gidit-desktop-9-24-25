@@ -39,7 +39,9 @@ function BuilderLayout() {
     <SidebarProvider>
       <div className="flex h-svh bg-background">
         <BuilderSidebar />
-        <SidebarInset>
+        <SidebarInset
+          className="w-full transition-[padding] md:pl-[var(--sidebar-width)] md:peer-data-[collapsible=icon]:pl-[var(--sidebar-width-icon)] md:peer-data-[collapsible=offcanvas]:pl-0"
+        >
           {view === 'canvas' ? (
             <div className="flex h-full flex-1 flex-col">
               <header className="flex items-center justify-between border-b px-6 py-4">

@@ -62,6 +62,10 @@ const ICON_CHOICES = [
   'ChartColumnIncreasing',
   'Gauge',
   'Brain',
+  'DollarSign',
+  'Heart',
+  'HeartPulse',
+  'Bell'
 ]
 
 function PageNameEditor({
@@ -402,7 +406,7 @@ function ComponentPalette() {
   )
 }
 
-function SidebarFooterMenu({ onOpenAssistant }: { onOpenAssistant: () => void }) {
+function SidebarFooterMenu({ onOpenAssistant, onOpenSettings }: { onOpenAssistant: () => void; onOpenSettings: () => void }) {
   const { state: sidebarState } = useSidebar()
   const isSidebarExpanded = sidebarState === 'expanded'
 
@@ -444,26 +448,25 @@ function SidebarFooterMenu({ onOpenAssistant }: { onOpenAssistant: () => void })
         </Tooltip>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <AppSettingsDialog>
-          <Tooltip disableHoverableContent={isSidebarExpanded}>
-            <TooltipTrigger asChild>
-              <SidebarMenuButton
-                className={buttonClass}
-                aria-label={!isSidebarExpanded ? 'Settings' : undefined}
-              >
-                <div className={iconWrapperClass()}>
-                  <Settings className="h-5 w-5" />
-                </div>
-                {isSidebarExpanded && <span>Settings</span>}
-              </SidebarMenuButton>
-            </TooltipTrigger>
-            {!isSidebarExpanded && (
-              <TooltipContent side="right" sideOffset={8}>
-                Settings
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </AppSettingsDialog>
+        <Tooltip disableHoverableContent={isSidebarExpanded}>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton
+              className={buttonClass}
+              onClick={onOpenSettings}
+              aria-label={!isSidebarExpanded ? 'Settings' : undefined}
+            >
+              <div className={iconWrapperClass()}>
+                <Settings className="h-5 w-5" />
+              </div>
+              {isSidebarExpanded && <span>Settings</span>}
+            </SidebarMenuButton>
+          </TooltipTrigger>
+          {!isSidebarExpanded && (
+            <TooltipContent side="right" sideOffset={8}>
+              Settings
+            </TooltipContent>
+          )}
+        </Tooltip>
       </SidebarMenuItem>
       <SidebarMenuItem>
         <Tooltip disableHoverableContent={isSidebarExpanded}>
@@ -491,6 +494,7 @@ function SidebarFooterMenu({ onOpenAssistant }: { onOpenAssistant: () => void })
 
 export function BuilderSidebar() {
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const { state: sidebarState } = useSidebar()
   const isSidebarExpanded = sidebarState === 'expanded'
 
@@ -525,7 +529,10 @@ export function BuilderSidebar() {
           )}
         </ScrollArea>
         <div className="p-2">
-          <SidebarFooterMenu onOpenAssistant={() => setAssistantOpen(true)} />
+          <SidebarFooterMenu
+            onOpenAssistant={() => setAssistantOpen(true)}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
         </div>
       </SidebarContent>
       <SidebarFooter>
@@ -540,6 +547,7 @@ export function BuilderSidebar() {
         </div>
       </SidebarFooter>
       <AiAssistant open={assistantOpen} onOpenChange={setAssistantOpen} />
+      <AppSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </Sidebar>
   )
 }

@@ -53,11 +53,14 @@ const AI_PROVIDERS = [
 ]
 
 type AppSettingsDialogProps = {
-  children: ReactNode
+  children?: ReactNode
+  trigger?: ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function AppSettingsDialog({ children }: AppSettingsDialogProps) {
-  const [open, setOpen] = useState(false)
+export function AppSettingsDialog({ children, trigger, open: openProp, onOpenChange }: AppSettingsDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
   const settings = useSettings()
   const theme = settings.theme
   const setTheme = settings.setTheme
@@ -88,9 +91,20 @@ export function AppSettingsDialog({ children }: AppSettingsDialogProps) {
     setFeatureFlags({ ...featureFlags, [flag]: value })
   }
 
+  const isControlled = openProp !== undefined
+  const open = isControlled ? openProp : internalOpen
+  const handleOpenChange = (next: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(next)
+    }
+    onOpenChange?.(next)
+  }
+
+  const triggerNode = trigger ?? children
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {triggerNode ? <DialogTrigger asChild>{triggerNode}</DialogTrigger> : null}
       <DialogContent className="flex h-[80vh] max-w-lg flex-col gap-4 sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>App Settings</DialogTitle>
