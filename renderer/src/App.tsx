@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster'
 import BuilderPage from '@/routes/BuilderPage'
 import DashboardPage from '@/routes/DashboardPage'
 import Settings from '@/routes/Settings'
-import { SettingsProvider } from '@/context/SettingsContext'
+import { SettingsProvider } from '@/store/SettingsContext'
 
 function App() {
   return (

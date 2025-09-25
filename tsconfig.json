@@ -16,9 +16,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["renderer/src/*"],
-      "react-hook-form": ["renderer/src/types/react-hook-form"],
-      "electron-store": ["renderer/src/types/electron-store"],
-      "react-router-dom": ["renderer/src/types/react-router-dom"]
+      "react-hook-form": ["renderer/src/lib/types/react-hook-form"],
+      "electron-store": ["renderer/src/lib/types/electron-store"],
+      "react-router-dom": ["renderer/src/lib/types/react-router-dom"]
     },
 
     /* Linting */

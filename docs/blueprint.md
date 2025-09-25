@@ -1,5 +1,8 @@
 # Project Blueprint
 
+
+# **App Name**: Gidit
+
 This document describes the high-level structure of the Electron + Vite + React application.
 
 - Desktop app shell powered by Electron (main + preload).
@@ -81,3 +84,20 @@ gidit-desktop/
 └── release/                 # Final packaged apps (.exe, .dmg, etc., ignored in Git)
 
 
+
+## Core Features:
+
+- Design Your Own Workspace: Modular workspace: Allow users to create a personalized workspace using drag-and-drop components like quadrants, timeboxing, calendar, notes, etc.
+- AI-Powered Note Assistance: AI Assistants: Provide AI-powered tools for brain-dump triage and note summarization. The tool will allow the user to extract and structure the output.
+- Gamified Progress Tracking: Behavioral Design: Incorporate elements like streaks, variable rewards, and gentle transitions to enhance user engagement.
+- App Personalization: Personalization: Enable the application's appearance (themes, fonts, soundscapes, etc.) to be customized to match user context profiles.
+- Tasks and Prioritization: Tasks Section: Quadrant display of task information and task prioritization support, and the ability to display more/less granular views (eg accordion)
+
+## Style Guidelines:
+
+- Primary color: HSL(210, 75%, 50%) - A vibrant, classic blue representing focus and productivity; converted to Hex: #3391F3
+- Background color: HSL(210, 20%, 95%) - Very light blue that's easy on the eyes for long sessions; converted to Hex: #F0F5FA
+- Accent color: HSL(180, 75%, 50%) - A turquoise that offers a modern, techy contrast; converted to Hex: #33F3CD
+- Body text and headline font: 'Inter', a grotesque-style sans-serif, gives a modern and neutral feel. Very suitable for all kinds of text display. Note: currently only Google Fonts are supported.
+- Employ a modular design with drag-and-drop functionality. Structure each component as a card to allow repositioning. Consider stacking sections when mobile.
+- Introduce subtle transitions for task completion and state changes. Animate the addition or removal of the module card.

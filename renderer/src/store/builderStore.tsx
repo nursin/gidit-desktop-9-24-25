@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
-import type { Item, Page, View } from './Types'
-import type { Template } from './TemplateData'
-import { WIDGETS } from './widgets'
+import type { Item, Page, View } from '@/components/dashboard/builder/Types'
+import type { Template } from '@/components/dashboard/builder/TemplateData'
+import { WIDGETS } from '@/components/dashboard/builder/widgets'
 
 const STORAGE_KEY = 'gidit-builder-state-v1'
 

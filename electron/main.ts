@@ -31,6 +31,8 @@ function loadAppIcon(): { image?: Electron.NativeImage; path?: string } {
     path.resolve(appRoot, '..', 'public'),
     path.join(appRoot, 'dist/renderer'),
     path.resolve(appRoot, '..', 'dist/renderer'),
+    path.join(appRoot, 'build/icons'),
+    path.resolve(appRoot, '..', 'build/icons'),
   ] as Array<string | undefined>)
     .filter((dir): dir is string => Boolean(dir))
     .map((dir) => path.normalize(dir))

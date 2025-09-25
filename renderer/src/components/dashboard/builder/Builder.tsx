@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Canvas } from './Canvas'
 import { Templates } from './Templates'
 import { BuilderSidebar, SidebarInset, SidebarProvider } from './Sidebar'
-import { BuilderProvider, useBuilderStore } from './store'
+import { BuilderProvider, useBuilderStore } from '@/store/builderStore'
 
 function BuilderLayout() {
   const {

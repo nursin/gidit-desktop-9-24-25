@@ -23,12 +23,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card } from '@/components/ui/card'
 import { GiditLogo } from '@/components/icons/GiditLogo'
 import { LayoutDashboard, LayoutTemplate, PlusCircle, Trash2, Settings, LogOut, Bot } from 'lucide-react'
-import { useBuilderStore } from './store'
+import { useBuilderStore } from '@/store/builderStore'
 import { WIDGETS, WIDGET_CATEGORIES } from './widgets'
 import type { Page } from './Types'
-import { AiAssistant } from '@/components/help/AiAssistant'
+import { AiAssistant } from '@/components/layout/AiAssistant'
 import { AppSettingsDialog } from '@/components/layout/AppSettingsDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 const ICON_CHOICES = [
@@ -63,10 +64,22 @@ const ICON_CHOICES = [
   'Brain',
 ]
 
-function PageNameEditor({ page, onSave }: { page: Page; onSave: (name: string) => void }) {
+function PageNameEditor({
+  page,
+  onSave,
+  visible,
+}: {
+  page: Page
+  onSave: (name: string) => void
+  visible: boolean
+}) {
   const [value, setValue] = useState(page.name)
   const [editing, setEditing] = useState(false)
   const inputVisible = editing
+
+  if (!visible) {
+    return null
+  }
 
   return (
     <div className="flex-1 min-w-0" onDoubleClick={() => setEditing(true)}>
@@ -135,31 +148,59 @@ function PageList() {
       <SidebarMenu>
         {pages.map((page) => {
           const IconComponent = iconMap[page.icon] ?? IconFallback
+          const buttonLabel = `Open ${page.name}`
           return (
             <SidebarMenuItem key={page.id}>
-              <SidebarMenuButton
-                onClick={() => setActivePage(page.id)}
-                isActive={page.id === activePageId}
-                className="justify-start h-8"
-              >
-                <button
-                  type="button"
-                  className={cn(
-                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-muted/40 text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                    page.id === activePageId && 'text-foreground',
-                  )}
-                  onClick={(event) => {
-                    if (!isSidebarExpanded) return
-                    event.preventDefault()
-                    event.stopPropagation()
-                    setIconPickerPageId(page.id)
-                  }}
-                  aria-label={`Change icon for ${page.name}`}
-                >
-                  <IconComponent className="h-5 w-5" />
-                </button>
-                <PageNameEditor page={page} onSave={(name) => updatePage(page.id, { name })} />
-              </SidebarMenuButton>
+              <Tooltip disableHoverableContent={isSidebarExpanded}>
+                <TooltipTrigger asChild>
+                  <SidebarMenuButton
+                    onClick={() => setActivePage(page.id)}
+                    isActive={page.id === activePageId}
+                    className={cn(
+                      'h-9 justify-start gap-2',
+                      'group-data-[state=collapsed]:h-11 group-data-[state=collapsed]:w-11 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:p-0',
+                    )}
+                    aria-label={!isSidebarExpanded ? buttonLabel : undefined}
+                  >
+                    {isSidebarExpanded ? (
+                      <button
+                        type="button"
+                        className={cn(
+                          'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-muted/40 text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                          page.id === activePageId && 'text-foreground',
+                        )}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          setIconPickerPageId(page.id)
+                        }}
+                        aria-label={`Change icon for ${page.name}`}
+                      >
+                        <IconComponent className="h-5 w-5" />
+                      </button>
+                    ) : (
+                      <div
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors',
+                          page.id === activePageId && 'text-foreground',
+                        )}
+                      >
+                        <IconComponent className="h-5 w-5" />
+                      </div>
+                    )}
+                    <PageNameEditor
+                      page={page}
+                      onSave={(name) => updatePage(page.id, { name })}
+                      visible={isSidebarExpanded}
+                    />
+                  </SidebarMenuButton>
+                </TooltipTrigger>
+                {!isSidebarExpanded && (
+                  <TooltipContent side="right" sideOffset={8}>
+                    {page.name}
+                  </TooltipContent>
+                )}
+              </Tooltip>
               <SidebarMenuAction
                 onClick={() => {
                   if (pages.length <= 1) return
@@ -175,17 +216,39 @@ function PageList() {
           )
         })}
         <SidebarMenuItem>
-          <SidebarMenuButton
-            onClick={() => {
-              const name = `Page ${pages.length + 1}`
-              const id = addPage(name)
-              setActivePage(id)
-            }}
-            className="justify-start h-8"
-          >
-            <PlusCircle className="h-5 w-5" />
-            <span>Add Page</span>
-          </SidebarMenuButton>
+          <Tooltip disableHoverableContent={isSidebarExpanded}>
+            <TooltipTrigger asChild>
+              <SidebarMenuButton
+                onClick={() => {
+                  const name = `Page ${pages.length + 1}`
+                  const id = addPage(name)
+                  setActivePage(id)
+                }}
+                className={cn(
+                  'h-9 justify-start gap-2',
+                  'group-data-[state=collapsed]:h-11 group-data-[state=collapsed]:w-11 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:p-0',
+                )}
+                aria-label={!isSidebarExpanded ? 'Add Page' : undefined}
+              >
+                <div
+                  className={cn(
+                    'flex shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors',
+                    isSidebarExpanded
+                      ? 'h-7 w-7 border border-transparent bg-muted/40 hover:border-border hover:text-foreground'
+                      : 'h-9 w-9',
+                  )}
+                >
+                  <PlusCircle className="h-5 w-5" />
+                </div>
+                {isSidebarExpanded && <span>Add Page</span>}
+              </SidebarMenuButton>
+            </TooltipTrigger>
+            {!isSidebarExpanded && (
+              <TooltipContent side="right" sideOffset={8}>
+                Add Page
+              </TooltipContent>
+            )}
+          </Tooltip>
         </SidebarMenuItem>
       </SidebarMenu>
       <Dialog
@@ -340,27 +403,87 @@ function ComponentPalette() {
 }
 
 function SidebarFooterMenu({ onOpenAssistant }: { onOpenAssistant: () => void }) {
+  const { state: sidebarState } = useSidebar()
+  const isSidebarExpanded = sidebarState === 'expanded'
+
+  const buttonClass = cn(
+    'h-9 justify-start gap-2',
+    'group-data-[state=collapsed]:h-11 group-data-[state=collapsed]:w-11 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:p-0',
+  )
+
+  const iconWrapperClass = (isActive?: boolean) =>
+    cn(
+      'flex shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors',
+      isSidebarExpanded
+        ? 'h-7 w-7 border border-transparent bg-muted/40 hover:border-border hover:text-foreground'
+        : 'h-9 w-9',
+      isActive && 'text-foreground',
+    )
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton className="h-8 justify-start" onClick={onOpenAssistant}>
-          <Bot className="h-4 w-4" />
-          <span className="group-data-[state=collapsed]:hidden">Assistant</span>
-        </SidebarMenuButton>
+        <Tooltip disableHoverableContent={isSidebarExpanded}>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton
+              className={buttonClass}
+              onClick={onOpenAssistant}
+              aria-label={!isSidebarExpanded ? 'Assistant' : undefined}
+            >
+              <div className={iconWrapperClass()}>
+                <Bot className="h-5 w-5" />
+              </div>
+              {isSidebarExpanded && <span>Assistant</span>}
+            </SidebarMenuButton>
+          </TooltipTrigger>
+          {!isSidebarExpanded && (
+            <TooltipContent side="right" sideOffset={8}>
+              Assistant
+            </TooltipContent>
+          )}
+        </Tooltip>
       </SidebarMenuItem>
       <SidebarMenuItem>
         <AppSettingsDialog>
-          <SidebarMenuButton className="h-8 justify-start">
-            <Settings className="h-4 w-4" />
-            <span className="group-data-[state=collapsed]:hidden">Settings</span>
-          </SidebarMenuButton>
+          <Tooltip disableHoverableContent={isSidebarExpanded}>
+            <TooltipTrigger asChild>
+              <SidebarMenuButton
+                className={buttonClass}
+                aria-label={!isSidebarExpanded ? 'Settings' : undefined}
+              >
+                <div className={iconWrapperClass()}>
+                  <Settings className="h-5 w-5" />
+                </div>
+                {isSidebarExpanded && <span>Settings</span>}
+              </SidebarMenuButton>
+            </TooltipTrigger>
+            {!isSidebarExpanded && (
+              <TooltipContent side="right" sideOffset={8}>
+                Settings
+              </TooltipContent>
+            )}
+          </Tooltip>
         </AppSettingsDialog>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton className="h-8 justify-start">
-          <LogOut className="h-4 w-4" />
-          <span className="group-data-[state=collapsed]:hidden">Logout</span>
-        </SidebarMenuButton>
+        <Tooltip disableHoverableContent={isSidebarExpanded}>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton
+              className={buttonClass}
+              aria-label={!isSidebarExpanded ? 'Logout' : undefined}
+            >
+              <div className={iconWrapperClass()}>
+                <LogOut className="h-5 w-5" />
+              </div>
+              {isSidebarExpanded && <span>Logout</span>}
+            </SidebarMenuButton>
+          </TooltipTrigger>
+          {!isSidebarExpanded && (
+            <TooltipContent side="right" sideOffset={8}>
+              Logout
+            </TooltipContent>
+          )}
+        </Tooltip>
       </SidebarMenuItem>
     </SidebarMenu>
   )
@@ -368,6 +491,8 @@ function SidebarFooterMenu({ onOpenAssistant }: { onOpenAssistant: () => void })
 
 export function BuilderSidebar() {
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const { state: sidebarState } = useSidebar()
+  const isSidebarExpanded = sidebarState === 'expanded'
 
   return (
     <Sidebar collapsible="icon">
@@ -392,8 +517,12 @@ export function BuilderSidebar() {
           <div className="p-2">
             <PageList />
           </div>
-          <SidebarSeparator />
-          <ComponentPalette />
+          {isSidebarExpanded && (
+            <>
+              <SidebarSeparator />
+              <ComponentPalette />
+            </>
+          )}
         </ScrollArea>
         <div className="p-2">
           <SidebarFooterMenu onOpenAssistant={() => setAssistantOpen(true)} />

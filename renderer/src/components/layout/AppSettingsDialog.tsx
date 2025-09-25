@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { useSettings } from '@/context/SettingsContext'
+import { useSettings } from '@/store/SettingsContext'
 
 const FONTS = [
   { label: 'Inter', value: 'font-inter' },
