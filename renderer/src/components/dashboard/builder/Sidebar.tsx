@@ -340,6 +340,7 @@ function WidgetCard({ widgetId }: { widgetId: string }) {
 
 function ComponentPalette() {
   const { setView, view } = useBuilderStore()
+  // Palette defaults: closed (no search UI by default)
   const [search, setSearch] = useState('')
 
   const categorized = useMemo(() => {
@@ -368,12 +369,11 @@ function ComponentPalette() {
 
   return (
     <div className="flex flex-1 flex-col p-2">
-      <div className="mb-3">
-        <Input placeholder="Search components" value={search} onChange={(event) => setSearch(event.target.value)} className="h-8" />
-      </div>
+      {/* Search removed per request */}
       <ScrollArea className="flex-1">
         <div className="space-y-4 pr-2">
-          <Accordion type="multiple" defaultValue={categories} className="w-full">
+          {/* Single-open behavior: only one category at a time */}
+          <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="templates">
               <AccordionTrigger className="text-sm font-semibold">
                 <div className="flex items-center gap-2">

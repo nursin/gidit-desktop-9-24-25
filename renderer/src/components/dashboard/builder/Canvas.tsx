@@ -3,7 +3,7 @@ import { toast } from '@/hooks/useToast'
 import { Item } from './Types'
 import { WidgetWrapper } from './WidgetWrapper'
 import { WIDGETS } from './widgets'
-
+import { Grip } from "lucide-react"
 type CanvasProps = {
   items: Item[]
   onRemoveWidget: (id: string) => void
@@ -53,7 +53,7 @@ export function Canvas({
     >
       {items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-          <div className="text-3xl">⋮⋮</div>
+          <div className="text-3xl"><Grip /></div>
           <div className="text-lg font-semibold">Drag widgets from the sidebar</div>
           <p className="text-sm">Drop components here to build your dashboard layout.</p>
         </div>

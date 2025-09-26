@@ -6,6 +6,9 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react"
 import type { LucideIcon } from "lucide-react"
@@ -15,11 +18,14 @@ import {
   BatteryCharging,
   Globe,
   Image as ImageIcon,
+  Maximize2,
+  Minimize2,
   Minus,
   Music,
   PlaySquare,
   Plus,
   RotateCw,
+  Search,
   Settings as SettingsIcon,
   TerminalSquare,
   Volume2,
@@ -49,46 +55,192 @@ interface DesktopApp {
 interface DesktopWindow {
   appId: string
   minimized: boolean
+  maximized: boolean
   position: { x: number; y: number }
+  size?: { width: number; height: number }
+  lastLayout?: {
+    position: { x: number; y: number }
+    size?: { width: number; height: number }
+  }
   zIndex: number
+}
+
+const AURORA_DEFAULT_URL = "https://duckduckgo.com/?q=productivity+workflow"
+
+const normalizeUrl = (value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return AURORA_DEFAULT_URL
+  if (/^(https?:\/\/|about:blank)/i.test(trimmed)) {
+    return trimmed
+  }
+  const hasDot = trimmed.includes(".")
+  const hasSpace = trimmed.includes(" ")
+  const looksLikeUrl = hasDot && !hasSpace
+  if (looksLikeUrl) {
+    return `https://${trimmed}`
+  }
+  return `https://duckduckgo.com/?q=${encodeURIComponent(trimmed)}`
+}
+
+function AuroraBrowser() {
+  const [history, setHistory] = useState<string[]>(() => [AURORA_DEFAULT_URL])
+  const [historyIndex, setHistoryIndex] = useState(0)
+  const [inputValue, setInputValue] = useState(() => history[0])
+  const [showSearch, setShowSearch] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const searchToggleRef = useRef<HTMLSpanElement | null>(null)
+
+  const currentUrl = history[historyIndex] ?? AURORA_DEFAULT_URL
+
+  useEffect(() => {
+    setInputValue(currentUrl)
+  }, [currentUrl])
+
+  // Listen for a custom event from the window title bar to toggle search
+  useEffect(() => {
+    const handler = () => setShowSearch((v) => !v)
+    document.addEventListener('toggle-aurora-search', handler as EventListener)
+    return () => document.removeEventListener('toggle-aurora-search', handler as EventListener)
+  }, [])
+
+  const commitNavigation = (nextUrl: string) => {
+    setHistory((prev) => {
+      const base = prev.slice(0, historyIndex + 1)
+      if (base[base.length - 1] === nextUrl) {
+        setHistoryIndex(base.length - 1)
+        return base
+      }
+      const updated = [...base, nextUrl]
+      setHistoryIndex(updated.length - 1)
+      return updated
+    })
+  }
+
+  const navigateTo = (raw: string) => {
+    const target = normalizeUrl(raw)
+    commitNavigation(target)
+    const view = iframeRef.current
+    if (view) {
+      view.src = target
+    }
+  }
+
+  const goBack = () => {
+    if (historyIndex === 0) return
+    const nextIndex = historyIndex - 1
+    setHistoryIndex(nextIndex)
+    const view = iframeRef.current
+    if (view) {
+      view.src = history[nextIndex]
+    }
+  }
+
+  const goForward = () => {
+    if (historyIndex >= history.length - 1) return
+    const nextIndex = historyIndex + 1
+    setHistoryIndex(nextIndex)
+    const view = iframeRef.current
+    if (view) {
+      view.src = history[nextIndex]
+    }
+  }
+
+  const reload = () => {
+    const view = iframeRef.current
+    if (!view) return
+    const url = history[historyIndex]
+    view.src = "about:blank"
+    window.setTimeout(() => {
+      if (iframeRef.current) {
+        iframeRef.current.src = url
+      }
+    }, 40)
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      navigateTo(inputValue)
+    }
+  }
+
+  return (
+    <div className="flex min-h-full flex-col gap-3 text-slate-200">
+      {/* Moved toolbar into window top bar; show inline search only when toggled */}
+      {showSearch && (
+        <div className="rounded-2xl border border-white/10 bg-slate-950/50 backdrop-blur">
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900/80 p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-200"
+              disabled={historyIndex === 0}
+              onClick={goBack}
+              aria-label="Go back"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-200"
+              disabled={historyIndex >= history.length - 1}
+              onClick={goForward}
+              aria-label="Go forward"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-200"
+              onClick={reload}
+              aria-label="Reload"
+            >
+              <RotateCw className="h-4 w-4" />
+            </Button>
+            <Input
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Search the web or enter URL"
+              className="h-9 flex-1 border-white/10 bg-slate-900/70 text-xs text-white placeholder:text-white/40"
+            />
+            <Button
+              variant="secondary"
+              className="h-9 rounded-xl bg-emerald-500 text-xs font-semibold text-white hover:bg-emerald-400"
+              onClick={() => navigateTo(inputValue)}
+            >
+              Search
+            </Button>
+          </div>
+        </div>
+      )}
+      <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 backdrop-blur-xl">
+        <iframe
+          ref={iframeRef}
+          src={currentUrl}
+          title="Aurora Browser"
+          sandbox="allow-forms allow-popups allow-scripts allow-same-origin"
+          className="h-full w-full rounded-2xl bg-white/5"
+        />
+      </div>
+      {showSearch && (
+        <p className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[0.7rem] text-white/70">
+          Hint: Use quick queries like <span className="font-semibold text-white/90">"gidit productivity"</span> or paste any URL to jump directly.
+        </p>
+      )}
+    </div>
+  )
 }
 
 const DESKTOP_APPS: DesktopApp[] = [
   {
     id: "browser",
     name: "Aurora Browser",
-    description: "Pinned documentation, quick links, and snippets.",
+    description: "",
     icon: Globe,
     accent: "text-sky-400",
-    content: (
-      <div className="space-y-4">
-        <div className="rounded-xl border border-white/20 bg-slate-900/80 text-slate-200">
-          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-300">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-            session.web
-          </div>
-          <div className="space-y-3 px-4 py-4 text-sm leading-relaxed">
-            <p>
-              This is a placeholder browser window. Wire it up to the actual Web Browser widget or an embedded page to turn your desktop into a launchpad for research and quick triage.
-            </p>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-emerald-200">
-                git status
-              </span>
-              <span className="rounded-full border border-sky-400/40 bg-sky-400/10 px-3 py-1 text-sky-200">
-                roadmap.md
-              </span>
-              <span className="rounded-full border border-violet-400/40 bg-violet-400/10 px-3 py-1 text-violet-200">
-                user interviews
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-xs text-white/80 backdrop-blur">
-          Tip: Drag this window and the dock into focus before handing the experience over to your users.
-        </div>
-      </div>
-    ),
+    content: <AuroraBrowser />,
   },
   {
     id: "terminal",
@@ -216,15 +368,80 @@ const getInitialPosition = (index: number) => ({
   y: 160 + index * 28,
 })
 
+const BROWSER_MIN_WIDTH = 420
+const BROWSER_MIN_HEIGHT = 360
+
 export default function Desktop() {
   const [windows, setWindows] = useState<DesktopWindow[]>([])
   const [clock, setClock] = useState(() => new Date())
   const zIndexRef = useRef(40)
+  const [resizing, setResizing] = useState<
+    | null
+    | {
+        appId: string
+        pointerId: number
+        startX: number
+        startY: number
+        startWidth: number
+        startHeight: number
+      }
+  >(null)
+  const [dragging, setDragging] = useState<
+    | null
+    | {
+        appId: string
+        pointerId: number
+        startX: number
+        startY: number
+        originX: number
+        originY: number
+      }
+  >(null)
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(new Date()), 60_000)
     return () => window.clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (!resizing) return
+
+    const handleMove = (event: PointerEvent) => {
+      setWindows((prev) =>
+        prev.map((window) => {
+          if (window.appId !== resizing.appId || !window.size) return window
+          const deltaX = event.clientX - resizing.startX
+          const deltaY = event.clientY - resizing.startY
+          const nextWidth = Math.max(
+            BROWSER_MIN_WIDTH,
+            resizing.startWidth + deltaX,
+          )
+          const nextHeight = Math.max(
+            BROWSER_MIN_HEIGHT,
+            resizing.startHeight + deltaY,
+          )
+          return {
+            ...window,
+            size: { width: nextWidth, height: nextHeight },
+          }
+        }),
+      )
+    }
+
+    const handleUp = () => {
+      setResizing(null)
+    }
+
+    window.addEventListener("pointermove", handleMove)
+    window.addEventListener("pointerup", handleUp)
+    window.addEventListener("pointercancel", handleUp)
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove)
+      window.removeEventListener("pointerup", handleUp)
+      window.removeEventListener("pointercancel", handleUp)
+    }
+  }, [resizing])
 
   const timeLabel = useMemo(() => formatTime(clock), [clock])
   const dateLabel = useMemo(() => formatDate(clock), [clock])
@@ -246,6 +463,11 @@ export default function Desktop() {
 
       const nextZ = getNextZIndex()
       const position = getInitialPosition(prev.length)
+      const app = DESKTOP_APPS.find((item) => item.id === appId)
+      const size =
+        app && app.id === "browser"
+          ? { width: 560, height: 520 }
+          : undefined
 
       return [
         ...prev,
@@ -253,6 +475,7 @@ export default function Desktop() {
           appId,
           minimized: false,
           position,
+          size,
           zIndex: nextZ,
         },
       ]
@@ -264,6 +487,29 @@ export default function Desktop() {
       prev.map((w) =>
         w.appId === appId ? { ...w, minimized: !w.minimized } : w
       )
+    )
+  }, [])
+
+  const toggleMaximize = useCallback((appId: string) => {
+    setWindows((prev) =>
+      prev.map((w) => {
+        if (w.appId !== appId) return w
+        if (!w.maximized) {
+          return {
+            ...w,
+            maximized: true,
+            lastLayout: { position: w.position, size: w.size },
+            position: { x: 12, y: 72 },
+            size: { width: window.innerWidth - 24, height: window.innerHeight - 140 },
+          }
+        }
+        return {
+          ...w,
+          maximized: false,
+          position: w.lastLayout?.position ?? w.position,
+          size: w.lastLayout?.size,
+        }
+      })
     )
   }, [])
 
@@ -281,6 +527,66 @@ export default function Desktop() {
       )
     },
     [getNextZIndex]
+  )
+
+  const handleDragPointerDown = useCallback(
+    (appId: string) => (event: ReactPointerEvent<HTMLDivElement>) => {
+      const target = windows.find((w) => w.appId === appId)
+      if (!target) return
+      setDragging({
+        appId,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        originX: target.position.x,
+        originY: target.position.y,
+      })
+    },
+    [windows]
+  )
+
+  useEffect(() => {
+    if (!dragging) return
+    const onMove = (event: PointerEvent) => {
+      setWindows((prev) =>
+        prev.map((w) => {
+          if (w.appId !== dragging.appId) return w
+          const dx = event.clientX - dragging.startX
+          const dy = event.clientY - dragging.startY
+          return {
+            ...w,
+            position: { x: dragging.originX + dx, y: dragging.originY + dy },
+          }
+        })
+      )
+    }
+    const onUp = () => setDragging(null)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+  }, [dragging])
+
+  const handleResizePointerDown = useCallback(
+    (appId: string) => (event: ReactPointerEvent<HTMLDivElement>) => {
+      event.stopPropagation()
+      const target = windows.find((window) => window.appId === appId)
+      if (!target?.size) return
+
+      setResizing({
+        appId,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startWidth: target.size.width,
+        startHeight: target.size.height,
+      })
+    },
+    [windows]
   )
 
   const openWindowIds = useMemo(
@@ -301,8 +607,8 @@ export default function Desktop() {
           </div>
         </div>
       </CardHeader> */}
-      <CardContent className="flex min-h-0 flex-1 flex-col">
-        <div className="relative flex-1 overflow-hidden rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(51,145,243,0.35),_rgba(24,35,66,0.85)_40%,_rgba(2,6,23,0.95)_80%)] text-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.8)]">
+      <CardContent className="flex min-h-0 flex-1 flex-col !p-0">
+        <div className="relative flex-1 overflow-hidden border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(51,145,243,0.35),_rgba(24,35,66,0.85)_40%,_rgba(2,6,23,0.95)_80%)] text-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.8)]">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20viewBox%3D%220%200%20300%20300%22%20fill%3D%22none%22xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%221%22%20fill%3D%22rgba(148,163,184,0.15)%22/%3E%3C/svg%3E')] opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-900/20 backdrop-blur-[2px]" />
 
@@ -345,31 +651,67 @@ export default function Desktop() {
               const app = DESKTOP_APPS.find((item) => item.id === window.appId)
               if (!app) return null
 
+              const style: CSSProperties = {
+                top: window.position.y,
+                left: window.position.x,
+                zIndex: window.zIndex,
+              }
+              if (window.size) {
+                style.width = window.size.width
+                style.height = window.size.height
+              }
+
               return (
                 <div
                   key={`${window.appId}-${index}`}
                   onMouseDown={() => focusWindow(window.appId)}
-                  style={{
-                    top: window.position.y,
-                    left: window.position.x,
-                    zIndex: window.zIndex,
-                  }}
+                  style={style}
                   className={cn(
-                    "absolute w-[360px] max-w-[90vw] overflow-hidden rounded-3xl border border-white/20 bg-white/65 text-slate-900 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.7)] backdrop-blur-xl transition-all duration-200 ease-out dark:bg-slate-950/80 dark:text-slate-100",
+                    "absolute max-w-[90vw] overflow-hidden rounded-3xl border border-white/20 bg-white/65 text-slate-900 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.7)] backdrop-blur-xl transition-all duration-200 ease-out dark:bg-slate-950/80 dark:text-slate-100",
+                    !window.size && "w-[360px]",
                     window.minimized && "pointer-events-none scale-95 opacity-0"
                   )}
                 >
-                  <div className="flex items-center justify-between gap-2 border-b border-white/20 bg-white/30 px-4 py-3 text-xs uppercase tracking-[0.3em] text-slate-700 dark:bg-white/5 dark:text-slate-200">
+                  <div
+                    className="flex items-center justify-between gap-2 border-b border-white/20 bg-white/30 px-4 py-3 text-xs uppercase tracking-[0.3em] text-slate-700 dark:bg-white/5 dark:text-slate-200"
+                    onPointerDown={handleDragPointerDown(app.id)}
+                  >
                     <div className="flex items-center gap-2">
                       <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
                       <span className="flex h-2.5 w-2.5 rounded-full bg-amber-300" />
                       <span className="flex h-2.5 w-2.5 rounded-full bg-rose-400" />
-                      <span className="ml-3 flex items-center gap-2 text-[0.7rem] font-semibold tracking-wide">
-                        <app.icon className={cn("h-4 w-4", app.accent)} />
-                        {app.name}
-                      </span>
+                      <button
+                        type="button"
+                        className="ml-3 flex items-center gap-2 text-[0.7rem] font-semibold tracking-wide hover:opacity-90"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Toggle the Aurora search bar inline within the app content
+                          if (app.id === 'browser') {
+                            const searchToggle = document.createEvent('Event')
+                            searchToggle.initEvent('toggle-aurora-search', true, true)
+                            e.currentTarget.dispatchEvent(searchToggle)
+                          }
+                        }}
+                        aria-label="Open search"
+                        title="Search"
+                      >
+                        <Search className={cn("h-4 w-4", app.accent)} />
+                        <span className="sr-only">Search</span>
+                      </button>
                     </div>
                     <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 rounded-full text-slate-700 transition hover:bg-slate-700/10 dark:text-slate-200"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          toggleMaximize(app.id)
+                        }}
+                        aria-label="Maximize window"
+                      >
+                        <Maximize2 className="h-3 w-3" />
+                      </Button>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -396,12 +738,22 @@ export default function Desktop() {
                       </Button>
                     </div>
                   </div>
-                  <div className="space-y-4 bg-white/55 p-5 text-sm text-slate-700 dark:bg-slate-950/70 dark:text-slate-100">
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-500/70 dark:text-slate-300/50">
-                      {app.description}
-                    </p>
-                    {app.content}
+                  <div className="flex h-full flex-col bg-white/55 text-sm text-slate-700 dark:bg-slate-950/70 dark:text-slate-100">
+                    <div className="flex-1 px-5 pb-6 pt-4">
+                      <div className="flex h-full flex-col gap-4 overflow-hidden">
+                        <div className="flex-1 overflow-auto pr-1">
+                          {app.content}
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                  {app.id === "browser" && (
+                    <div
+                      role="presentation"
+                      onPointerDown={handleResizePointerDown(app.id)}
+                      className="absolute bottom-2 right-2 h-4 w-4 cursor-se-resize rounded bg-white/70 opacity-80 transition hover:bg-white"
+                    />
+                  )}
                 </div>
               )
             })}
