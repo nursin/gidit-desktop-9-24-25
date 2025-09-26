@@ -65,7 +65,8 @@ const ICON_CHOICES = [
   'DollarSign',
   'Heart',
   'HeartPulse',
-  'Bell'
+  'Bell',
+  'Globe'
 ]
 
 function PageNameEditor({
@@ -167,8 +168,9 @@ function PageList() {
                     aria-label={!isSidebarExpanded ? buttonLabel : undefined}
                   >
                     {isSidebarExpanded ? (
-                      <button
-                        type="button"
+                      <span
+                        role="button"
+                        tabIndex={0}
                         className={cn(
                           'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-muted/40 text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                           page.id === activePageId && 'text-foreground',
@@ -178,10 +180,17 @@ function PageList() {
                           event.stopPropagation()
                           setIconPickerPageId(page.id)
                         }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            event.stopPropagation()
+                            setIconPickerPageId(page.id)
+                          }
+                        }}
                         aria-label={`Change icon for ${page.name}`}
                       >
                         <IconComponent className="h-5 w-5" />
-                      </button>
+                      </span>
                     ) : (
                       <div
                         className={cn(

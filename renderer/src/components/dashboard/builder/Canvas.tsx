@@ -62,28 +62,34 @@ export function Canvas({
           className="grid w-full flex-1 gap-5 p-6"
           style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridAutoRows: `${CELL_HEIGHT}px` }}
         >
-          {items.map((item) => (
-            <div key={item.id} style={{ gridColumn: `span ${Math.max(1, Math.min(4, item.width))}`, gridRow: `span ${Math.max(1, item.height)}` }}>
-              <WidgetWrapper
-                id={item.id}
-                widgetId={item.widgetId}
-                name={item.name}
-                width={item.width}
-                height={item.height}
-                theme={item.theme}
-                customBackgroundColor={item.customBackgroundColor}
-                customTextColor={item.customTextColor}
-                onRemove={onRemoveWidget}
-                onSizeChange={onSizeChange}
-                onNameChange={onNameChange}
-                onPropChange={onPropChange}
-                onDuplicate={onDuplicateWidget}
-                onMove={onMoveWidget}
+          {items.map((item) => {
+            const supportsAdvancedActions = item.widgetId !== 'WebBrowser'
+            return (
+              <div
+                key={item.id}
+                style={{ gridColumn: `span ${Math.max(1, Math.min(4, item.width))}`, gridRow: `span ${Math.max(1, item.height)}` }}
               >
-                {WIDGETS[item.widgetId]?.component ?? <div />}
-              </WidgetWrapper>
-            </div>
-          ))}
+                <WidgetWrapper
+                  id={item.id}
+                  widgetId={item.widgetId}
+                  name={item.name}
+                  width={item.width}
+                  height={item.height}
+                  theme={item.theme}
+                  customBackgroundColor={item.customBackgroundColor}
+                  customTextColor={item.customTextColor}
+                  onRemove={onRemoveWidget}
+                  onSizeChange={onSizeChange}
+                  onNameChange={onNameChange}
+                  onPropChange={onPropChange}
+                  onDuplicate={supportsAdvancedActions ? onDuplicateWidget : undefined}
+                  onMove={supportsAdvancedActions ? onMoveWidget : undefined}
+                >
+                  {WIDGETS[item.widgetId]?.component ?? <div />}
+                </WidgetWrapper>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

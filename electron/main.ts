@@ -6,8 +6,11 @@ import './ipc/db.ipc.js'
 import './ipc/ai.ipc.js'
 import './ipc/sys.ipc.js'
 import '../scripts/first-run.js'
+import { startProxyServer } from './proxy.js'
 
 const resolvedDir = __dirname
+
+app.disableHardwareAcceleration()
 
 process.env.APP_ROOT = path.join(resolvedDir, '..')
 
@@ -76,7 +79,6 @@ let mainWindow: BrowserWindow | null = null
 async function loadRenderer(win: BrowserWindow) {
   if (VITE_DEV_SERVER_URL) {
     await win.loadURL(VITE_DEV_SERVER_URL)
-    win.webContents.openDevTools({ mode: 'detach' })
   } else {
     const indexPath = path.join(RENDERER_DIST, 'index.html')
     await win.loadFile(indexPath)
@@ -94,6 +96,8 @@ function createWindow() {
       preload: path.join(resolvedDir, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true,
+      sandbox: false,
     },
   })
 
@@ -112,6 +116,7 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('ready', async () => {
+    startProxyServer()
     protocol.registerFileProtocol('app', (request, callback) => {
       const url = request.url.slice(6)
       callback({ path: path.normalize(`${resolvedDir}/${url}`) })

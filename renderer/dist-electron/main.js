@@ -8,6 +8,8 @@ const require$$3$2 = require("crypto");
 const require$$4 = require("assert");
 const require$$5 = require("events");
 const require$$1 = require("os");
+const node_http = require("node:http");
+const node_url = require("node:url");
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
@@ -3142,9 +3144,9 @@ function commentKeyword$1({ gen, schemaEnv, schema, errSchemaPath, opts }) {
   }
 }
 function returnResults$1(it) {
-  const { gen, schemaEnv, validateName, ValidationError: ValidationError3, opts } = it;
+  const { gen, schemaEnv, validateName, ValidationError: ValidationError2, opts } = it;
   if (schemaEnv.$async) {
-    gen.if((0, codegen_1$T._)`${names_1$a.default.errors} === 0`, () => gen.return(names_1$a.default.data), () => gen.throw((0, codegen_1$T._)`new ${ValidationError3}(${names_1$a.default.vErrors})`));
+    gen.if((0, codegen_1$T._)`${names_1$a.default.errors} === 0`, () => gen.return(names_1$a.default.data), () => gen.throw((0, codegen_1$T._)`new ${ValidationError2}(${names_1$a.default.vErrors})`));
   } else {
     gen.assign((0, codegen_1$T._)`${validateName}.errors`, names_1$a.default.vErrors);
     if (opts.unevaluated)
@@ -3488,15 +3490,21 @@ function getData$1($data, { dataLevel, dataNames, dataPathArr }) {
 }
 validate$1.getData = getData$1;
 var validation_error$1 = {};
-Object.defineProperty(validation_error$1, "__esModule", { value: true });
-let ValidationError$1 = class ValidationError extends Error {
-  constructor(errors2) {
-    super("validation failed");
-    this.errors = errors2;
-    this.ajv = this.validation = true;
+var hasRequiredValidation_error;
+function requireValidation_error() {
+  if (hasRequiredValidation_error) return validation_error$1;
+  hasRequiredValidation_error = 1;
+  Object.defineProperty(validation_error$1, "__esModule", { value: true });
+  class ValidationError2 extends Error {
+    constructor(errors2) {
+      super("validation failed");
+      this.errors = errors2;
+      this.ajv = this.validation = true;
+    }
   }
-};
-validation_error$1.default = ValidationError$1;
+  validation_error$1.default = ValidationError2;
+  return validation_error$1;
+}
 var ref_error$1 = {};
 Object.defineProperty(ref_error$1, "__esModule", { value: true });
 const resolve_1$4 = resolve$4;
@@ -3512,7 +3520,7 @@ var compile$1 = {};
 Object.defineProperty(compile$1, "__esModule", { value: true });
 compile$1.resolveSchema = compile$1.getCompilingSchema = compile$1.resolveRef = compile$1.compileSchema = compile$1.SchemaEnv = void 0;
 const codegen_1$S = codegen$1;
-const validation_error_1$1 = validation_error$1;
+const validation_error_1$1 = requireValidation_error();
 const names_1$9 = names$3;
 const resolve_1$3 = resolve$4;
 const util_1$L = util$1;
@@ -4468,7 +4476,7 @@ uri$3.default = uri$2;
   Object.defineProperty(exports2, "CodeGen", { enumerable: true, get: function() {
     return codegen_12.CodeGen;
   } });
-  const validation_error_12 = validation_error$1;
+  const validation_error_12 = requireValidation_error();
   const ref_error_12 = ref_error$1;
   const rules_12 = rules$1;
   const compile_12 = compile$1;
@@ -6921,7 +6929,7 @@ const require$$3$1 = {
   Object.defineProperty(exports2, "CodeGen", { enumerable: true, get: function() {
     return codegen_12.CodeGen;
   } });
-  var validation_error_12 = validation_error$1;
+  var validation_error_12 = requireValidation_error();
   Object.defineProperty(exports2, "ValidationError", { enumerable: true, get: function() {
     return validation_error_12.default;
   } });
@@ -9418,9 +9426,9 @@ function commentKeyword({ gen, schemaEnv, schema, errSchemaPath, opts }) {
   }
 }
 function returnResults(it) {
-  const { gen, schemaEnv, validateName, ValidationError: ValidationError3, opts } = it;
+  const { gen, schemaEnv, validateName, ValidationError: ValidationError2, opts } = it;
   if (schemaEnv.$async) {
-    gen.if((0, codegen_1$n._)`${names_1$3.default.errors} === 0`, () => gen.return(names_1$3.default.data), () => gen.throw((0, codegen_1$n._)`new ${ValidationError3}(${names_1$3.default.vErrors})`));
+    gen.if((0, codegen_1$n._)`${names_1$3.default.errors} === 0`, () => gen.return(names_1$3.default.data), () => gen.throw((0, codegen_1$n._)`new ${ValidationError2}(${names_1$3.default.vErrors})`));
   } else {
     gen.assign((0, codegen_1$n._)`${validateName}.errors`, names_1$3.default.vErrors);
     if (opts.unevaluated)
@@ -9765,14 +9773,14 @@ function getData($data, { dataLevel, dataNames, dataPathArr }) {
 validate.getData = getData;
 var validation_error = {};
 Object.defineProperty(validation_error, "__esModule", { value: true });
-class ValidationError2 extends Error {
+class ValidationError extends Error {
   constructor(errors2) {
     super("validation failed");
     this.errors = errors2;
     this.ajv = this.validation = true;
   }
 }
-validation_error.default = ValidationError2;
+validation_error.default = ValidationError;
 var ref_error = {};
 Object.defineProperty(ref_error, "__esModule", { value: true });
 const resolve_1$1 = resolve$1;
@@ -14972,7 +14980,217 @@ async function ensureResources() {
 ensureResources().catch((err) => {
   console.error("Error in first-run:", err);
 });
+const DEFAULT_PROXY_PORT = Number(process.env.GIDIT_PROXY_PORT ?? "3790");
+const HOST = "127.0.0.1";
+const HOP_BY_HOP_HEADERS = /* @__PURE__ */ new Set([
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade"
+]);
+const STRIP_RESPONSE_HEADERS = /* @__PURE__ */ new Set([
+  "content-security-policy",
+  "x-frame-options",
+  "cross-origin-embedder-policy",
+  "cross-origin-opener-policy",
+  "cross-origin-resource-policy"
+]);
+const ATTRIBUTE_REGEX = /(href|src|action|formaction|ping)=("[^"]*"|'[^']*')/gi;
+const SRCSET_REGEX = /(srcset)=("[^"]*"|'[^']*')/gi;
+const CSS_URL_REGEX = /url\(("[^"]*"|'[^']*'|[^)]+)\)/gi;
+let serverStarted = false;
+function proxifyUrl(value, baseUrl, proxyOrigin) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.startsWith("#")) return trimmed;
+  if (/^(javascript:|data:|mailto:|tel:)/i.test(trimmed)) return trimmed;
+  try {
+    const resolved = new node_url.URL(trimmed, baseUrl);
+    return `${proxyOrigin}/proxy?url=${encodeURIComponent(resolved.toString())}`;
+  } catch (error2) {
+    console.warn("[proxy] failed to rewrite", trimmed, "base", baseUrl.toString(), error2);
+    return trimmed;
+  }
+}
+function rewriteHtml(html, baseUrl, proxyOrigin) {
+  let transformed = html.replace(ATTRIBUTE_REGEX, (match, attr, valueWithQuotes) => {
+    const quote = valueWithQuotes.startsWith('"') ? '"' : "'";
+    const raw = valueWithQuotes.slice(1, -1);
+    const rewritten = proxifyUrl(raw, baseUrl, proxyOrigin);
+    return `${attr}=${quote}${rewritten}${quote}`;
+  });
+  transformed = transformed.replace(SRCSET_REGEX, (match, attr, valueWithQuotes) => {
+    const quote = valueWithQuotes.startsWith('"') ? '"' : "'";
+    const rewritten = valueWithQuotes.slice(1, -1).split(",").map((candidate) => {
+      const [urlPart, descriptor] = candidate.trim().split(/\s+/);
+      const proxied = proxifyUrl(urlPart, baseUrl, proxyOrigin);
+      return descriptor ? `${proxied} ${descriptor}` : proxied;
+    }).join(", ");
+    return `${attr}=${quote}${rewritten}${quote}`;
+  });
+  transformed = transformed.replace(CSS_URL_REGEX, (match, valueWithQuotes) => {
+    const hasQuotes = valueWithQuotes.startsWith('"') || valueWithQuotes.startsWith("'");
+    const quote = valueWithQuotes.startsWith('"') ? '"' : valueWithQuotes.startsWith("'") ? "'" : "";
+    const raw = hasQuotes ? valueWithQuotes.slice(1, -1) : valueWithQuotes;
+    const proxied = proxifyUrl(raw, baseUrl, proxyOrigin);
+    return `url(${quote}${proxied}${quote})`;
+  });
+  const hasBase = /<base\s/i.test(transformed);
+  if (!hasBase) {
+    const baseHref = `${proxyOrigin}/proxy?url=${encodeURIComponent(baseUrl.toString())}`;
+    transformed = transformed.replace(
+      /<head(\s[^>]*)?>/i,
+      (match) => `${match}
+<base href="${baseHref}">`
+    );
+  }
+  return transformed;
+}
+function filterRequestHeaders(req, upstream) {
+  const headers = {};
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (!value) continue;
+    const lower = key.toLowerCase();
+    if (HOP_BY_HOP_HEADERS.has(lower)) continue;
+    if (Array.isArray(value)) {
+      headers[key] = value.join(",");
+    } else {
+      headers[key] = value;
+    }
+  }
+  headers["accept-encoding"] = "identity";
+  headers["host"] = upstream.host;
+  if (headers.origin) {
+    headers.origin = upstream.origin;
+  }
+  if (headers.referer) {
+    try {
+      const refererUrl = new node_url.URL(headers.referer);
+      if (refererUrl.origin !== upstream.origin) {
+        headers.referer = upstream.origin + "/";
+      }
+    } catch {
+      headers.referer = upstream.origin + "/";
+    }
+  }
+  return headers;
+}
+function rewriteResponseHeaders(upstreamResponse, proxyOrigin, upstreamUrl) {
+  const headers = {};
+  upstreamResponse.headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (HOP_BY_HOP_HEADERS.has(lower) || STRIP_RESPONSE_HEADERS.has(lower)) {
+      return;
+    }
+    if (lower === "location") {
+      try {
+        const redirectUrl = new node_url.URL(value, upstreamUrl);
+        headers[key] = `${proxyOrigin}/proxy?url=${encodeURIComponent(redirectUrl.toString())}`;
+        return;
+      } catch {
+      }
+    }
+    headers[key] = value;
+  });
+  headers["access-control-allow-origin"] = "*";
+  headers["cache-control"] = "no-store";
+  return headers;
+}
+async function handleProxyRequest(req, res, proxyOrigin) {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    });
+    res.end();
+    return;
+  }
+  const requestUrl = new node_url.URL(req.url ?? "/", proxyOrigin);
+  if (requestUrl.pathname !== "/proxy") {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Proxy endpoint not found");
+    return;
+  }
+  const targetParam = requestUrl.searchParams.get("url");
+  if (!targetParam) {
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end("Missing url parameter");
+    return;
+  }
+  let upstreamUrl;
+  try {
+    upstreamUrl = new node_url.URL(targetParam);
+  } catch (error2) {
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end("Invalid url parameter");
+    return;
+  }
+  if (!/^https?:/i.test(upstreamUrl.protocol)) {
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end("Only http(s) protocols are supported");
+    return;
+  }
+  try {
+    const bodyChunks = [];
+    for await (const chunk of req) {
+      if (!chunk) continue;
+      bodyChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const requestBody = Buffer.concat(bodyChunks);
+    const useBody = requestBody.length > 0 && req.method && !["GET", "HEAD"].includes(req.method);
+    const upstreamResponse = await fetch(upstreamUrl, {
+      method: req.method,
+      headers: filterRequestHeaders(req, upstreamUrl),
+      redirect: "manual",
+      body: useBody ? requestBody : void 0
+    });
+    const headers = rewriteResponseHeaders(upstreamResponse, proxyOrigin, upstreamUrl);
+    const contentType = upstreamResponse.headers.get("content-type") ?? "";
+    if (contentType.includes("text/html")) {
+      const text = await upstreamResponse.text();
+      const rewritten = rewriteHtml(text, upstreamUrl, proxyOrigin);
+      headers["content-length"] = Buffer.byteLength(rewritten).toString();
+      res.writeHead(upstreamResponse.status, upstreamResponse.statusText, headers);
+      res.end(rewritten);
+      return;
+    }
+    const arrayBuffer = await upstreamResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    headers["content-length"] = buffer.length.toString();
+    res.writeHead(upstreamResponse.status, upstreamResponse.statusText, headers);
+    res.end(buffer);
+  } catch (error2) {
+    console.error("[proxy] request failed", error2);
+    res.writeHead(502, {
+      "Content-Type": "text/plain",
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "no-store"
+    });
+    res.end("Proxy request failed");
+  }
+}
+function startProxyServer(port = DEFAULT_PROXY_PORT) {
+  if (serverStarted) {
+    return;
+  }
+  const origin = `http://${HOST}:${port}`;
+  const server = node_http.createServer((req, res) => {
+    void handleProxyRequest(req, res, origin);
+  });
+  server.on("error", (error2) => {
+    console.error("[proxy] server error", error2);
+  });
+  server.listen(port, HOST, () => {
+    serverStarted = true;
+    console.log(`[proxy] running at ${origin}`);
+  });
+}
 const resolvedDir = __dirname;
+require$$1$2.app.disableHardwareAcceleration();
 process.env.APP_ROOT = path$6.join(resolvedDir, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path$6.join(process.env.APP_ROOT, "dist-electron");
@@ -15023,7 +15241,6 @@ let mainWindow = null;
 async function loadRenderer(win) {
   if (VITE_DEV_SERVER_URL) {
     await win.loadURL(VITE_DEV_SERVER_URL);
-    win.webContents.openDevTools({ mode: "detach" });
   } else {
     const indexPath = path$6.join(RENDERER_DIST, "index.html");
     await win.loadFile(indexPath);
@@ -15039,7 +15256,9 @@ function createWindow() {
     webPreferences: {
       preload: path$6.join(resolvedDir, "preload.js"),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webviewTag: true,
+      sandbox: false
     }
   });
   loadRenderer(mainWindow).catch((error2) => {
@@ -15055,6 +15274,7 @@ if (!require$$1$2.app.requestSingleInstanceLock()) {
     mainWindow.focus();
   });
   require$$1$2.app.on("ready", async () => {
+    startProxyServer();
     require$$1$2.protocol.registerFileProtocol("app", (request, callback) => {
       const url = request.url.slice(6);
       callback({ path: path$6.normalize(`${resolvedDir}/${url}`) });
