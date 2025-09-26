@@ -22,9 +22,9 @@ import { Input } from '@/components/ui/input'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card } from '@/components/ui/card'
 import { GiditLogo } from '@/components/icons/GiditLogo'
-import { LayoutDashboard, LayoutTemplate, PlusCircle, Trash2, Settings, LogOut, Bot, Eraser } from 'lucide-react'
+import { LayoutDashboard, LayoutTemplate, PlusCircle, Trash2, Settings, LogOut, Bot } from 'lucide-react'
 import { useBuilderStore } from '@/store/builderStore'
-import { WIDGETS, WIDGET_CATEGORIES } from './widgets'
+import { WIDGETS, WIDGET_CATEGORIES, WIDGET_CATEGORY_ORDER } from './widgets'
 import type { Page } from './Types'
 import { AiAssistant } from '@/components/layout/AiAssistant'
 import { AppSettingsDialog } from '@/components/layout/AppSettingsDialog'
@@ -341,14 +341,21 @@ function ComponentPalette() {
         const matches = widget.name.toLowerCase().includes(query) || widget.id.toLowerCase().includes(query)
         if (!matches) return
       }
-      const category = widget.category || 'General'
+      const category = widget.category || 'Productivity'
       if (!result[category]) result[category] = []
       result[category].push(widget.id)
     })
     return result
   }, [search])
 
-  const categories = Object.keys(categorized)
+  const categories = useMemo(
+    () =>
+      WIDGET_CATEGORY_ORDER.filter((category) => {
+        const items = categorized[category]
+        return items && items.length > 0
+      }),
+    [categorized],
+  )
 
   return (
     <div className="flex flex-1 flex-col p-2">

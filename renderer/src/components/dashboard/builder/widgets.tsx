@@ -1,5 +1,13 @@
 import type { JSX } from 'react'
-import { LayoutDashboard } from 'lucide-react'
+import {
+  LayoutDashboard,
+  ListCheck,
+  Boxes,
+  LineChart,
+  Bot,
+  HeartPulse,
+  Gamepad2,
+} from 'lucide-react'
 import ActivityHeatmap from '@/components/dashboard/ActivityHeatmap'
 import AppSearch from '@/components/dashboard/AppSearch'
 import BehavioralAnalysis from '@/components/dashboard/BehavioralAnalysis'
@@ -141,9 +149,111 @@ export const WIDGETS: Record<string, WidgetDefinition> = {
   WordProcessor: { id: 'WordProcessor', name: 'Word Processor', category: 'General', component: <WordProcessor /> },
 }
 
-export const WIDGET_CATEGORIES = {
-  General: {
-    name: 'General',
-    icon: LayoutDashboard,
-  },
+const CATEGORY_ASSIGNMENTS: Record<string, WidgetCategory> = {
+  ActivityHeatmap: 'Analytics',
+  AppSearch: 'SmartTools',
+  BehavioralAnalysis: 'Analytics',
+  BrainDumpTriage: 'Organization',
+  BreakPromptTile: 'Productivity',
+  BudgetTracker: 'Analytics',
+  CalendarCard: 'Organization',
+  ChallengeTimer: 'Productivity',
+  ChatApp: 'SmartTools',
+  DailyTaskSuggestions: 'Productivity',
+  Dashboard: 'Analytics',
+  DateTimeDisplay: 'Productivity',
+  DietaryTracker: 'Wellness',
+  DocumentRecords: 'Organization',
+  DoneWall: 'Productivity',
+  DreamWeaver: 'SmartTools',
+  EnergySelector: 'Wellness',
+  FamilyAuthenticator: 'SmartTools',
+  FinanceCard: 'Analytics',
+  FitnessTracker: 'Wellness',
+  FlashcardDeck: 'Productivity',
+  FocusMode: 'Productivity',
+  Gallery: 'Organization',
+  GoalPlanner: 'Productivity',
+  HealthSummary: 'Wellness',
+  IndexCardStack: 'Organization',
+  LaunchButton: 'Productivity',
+  MemoryGame: 'Games',
+  MindfulMoments: 'Wellness',
+  MoodTracker: 'Wellness',
+  MysteryTaskPicker: 'Games',
+  NavigationBar: 'Organization',
+  NoteDisplay: 'Organization',
+  NotificationsPanel: 'Productivity',
+  NowNextPanel: 'Productivity',
+  PeriodTracker: 'Wellness',
+  PersonalManual: 'Organization',
+  Presentation: 'Productivity',
+  ProgressAnalytics: 'Analytics',
+  ProjectPlanner: 'Productivity',
+  PsychologicalProfile: 'SmartTools',
+  RecentTransactions: 'Analytics',
+  RockPaperScissors: 'Games',
+  SBARSynthesizer: 'SmartTools',
+  ScrumBoard: 'Organization',
+  SessionRecap: 'SmartTools',
+  SoundscapeGenerator: 'Wellness',
+  Spreadsheet: 'Analytics',
+  StatsPanel: 'Analytics',
+  StickyNoteBoard: 'Productivity',
+  StoryWriter: 'SmartTools',
+  StreaksTracker: 'Productivity',
+  TaskSpinner: 'Productivity',
+  TasksQuadrant: 'Productivity',
+  TicTacToe: 'Games',
+  TimeBlockPlanner: 'Productivity',
+  TimersAndReminders: 'Productivity',
+  ToDoList: 'Productivity',
+  VirtualPet: 'Games',
+  VoiceCapture: 'SmartTools',
+  WebBrowser: 'SmartTools',
+  WeeklySpread: 'Organization',
+  WhatAmIForgetting: 'Productivity',
+  WordProcessor: 'Productivity',
 }
+
+Object.values(WIDGETS).forEach((widget) => {
+  widget.category = CATEGORY_ASSIGNMENTS[widget.id] ?? 'Productivity'
+})
+
+export const WIDGET_CATEGORIES = {
+  Productivity: {
+    name: 'Productivity',
+    icon: ListCheck,
+  },
+  Organization: {
+    name: 'Organization',
+    icon: Boxes,
+  },
+  Analytics: {
+    name: 'Analytics',
+    icon: LineChart,
+  },
+  SmartTools: {
+    name: 'Smart Tools',
+    icon: Bot,
+  },
+  Wellness: {
+    name: 'Wellness',
+    icon: HeartPulse,
+  },
+  Games: {
+    name: 'Games',
+    icon: Gamepad2,
+  },
+} as const
+
+export type WidgetCategory = keyof typeof WIDGET_CATEGORIES
+
+export const WIDGET_CATEGORY_ORDER: WidgetCategory[] = [
+  'Productivity',
+  'Organization',
+  'Analytics',
+  'SmartTools',
+  'Wellness',
+  'Games',
+]
