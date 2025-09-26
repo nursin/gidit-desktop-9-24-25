@@ -290,7 +290,7 @@ export default function Desktop() {
 
   return (
     <Card className="flex h-full flex-col border-0 bg-transparent shadow-none">
-      <CardHeader className="pb-2">
+      {/* <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
           <Globe className="h-6 w-6 text-primary" />
           <div>
@@ -300,9 +300,9 @@ export default function Desktop() {
             </CardDescription>
           </div>
         </div>
-      </CardHeader>
+      </CardHeader> */}
       <CardContent className="flex min-h-0 flex-1 flex-col">
-        <div className="relative flex-1 overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(51,145,243,0.35),_rgba(24,35,66,0.85)_40%,_rgba(2,6,23,0.95)_80%)] text-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.8)]">
+        <div className="relative flex-1 overflow-hidden rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(51,145,243,0.35),_rgba(24,35,66,0.85)_40%,_rgba(2,6,23,0.95)_80%)] text-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.8)]">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20viewBox%3D%220%200%20300%20300%22%20fill%3D%22none%22xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%221%22%20fill%3D%22rgba(148,163,184,0.15)%22/%3E%3C/svg%3E')] opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-900/20 backdrop-blur-[2px]" />
 
@@ -314,14 +314,14 @@ export default function Desktop() {
             <span>{timeLabel}</span>
           </div>
 
-          <div className="absolute right-6 top-6 flex items-center gap-3 rounded-full bg-slate-900/60 px-4 py-2 text-xs text-slate-100 shadow-lg backdrop-blur">
+          {/* <div className="absolute right-6 top-6 flex items-center gap-3 rounded-full bg-slate-900/60 px-4 py-2 text-xs text-slate-100 shadow-lg backdrop-blur">
             <Wifi className="h-4 w-4" />
             <Volume2 className="h-4 w-4" />
             <BatteryCharging className="h-4 w-4" />
-          </div>
+          </div> */}
 
           {/* Desktop icons */}
-          <div className="pointer-events-none absolute inset-0">
+          {/* <div className="pointer-events-none absolute inset-0">
             <div className="pointer-events-auto grid gap-5 px-10 py-20 sm:w-52">
               {DESKTOP_APPS.map((app) => (
                 <button
@@ -337,7 +337,7 @@ export default function Desktop() {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Windows */}
           <div className="relative h-full w-full px-4 pb-28 pt-24 sm:px-12">
@@ -435,7 +435,7 @@ export default function Desktop() {
           </div>
 
           {/* Quick launch strip */}
-          <div className="absolute bottom-6 right-6 hidden flex-col gap-3 text-xs text-white/80 lg:flex">
+          {/* <div className="absolute bottom-6 right-6 hidden flex-col gap-3 text-xs text-white/80 lg:flex">
             <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
               <p className="uppercase tracking-[0.4em] text-white/60">Focus preset</p>
               <p className="mt-1 font-semibold">Deep Work • 90 min</p>
@@ -464,7 +464,7 @@ export default function Desktop() {
                 Refresh Widgets
               </Button>
             </div>
-          </div>
+          </div> */}
         </div>
       </CardContent>
     </Card>
