@@ -72,6 +72,7 @@ import WebBrowser from '@/components/dashboard/WebBrowser'
 import WeeklySpread from '@/components/dashboard/WeeklySpread'
 import WhatAmIForgetting from '@/components/dashboard/WhatAmIForgetting'
 import WordProcessor from '@/components/dashboard/WordProcessor'
+import Calculator from '@/components/dashboard/Calculator'
 
 export type WidgetDefinition = {
   id: string
@@ -147,6 +148,7 @@ export const WIDGETS: Record<string, WidgetDefinition> = {
   WeeklySpread: { id: 'WeeklySpread', name: 'Weekly Spread', category: 'General', component: <WeeklySpread /> },
   WhatAmIForgetting: { id: 'WhatAmIForgetting', name: 'What Am I Forgetting', category: 'General', component: <WhatAmIForgetting /> },
   WordProcessor: { id: 'WordProcessor', name: 'Word Processor', category: 'General', component: <WordProcessor /> },
+  Calculator: { id: 'Calculator', name: 'Calculator', category: 'General', component: <Calculator />, initialWidth: 280, initialHeight: 360 },
 }
 
 const CATEGORY_ASSIGNMENTS: Record<string, WidgetCategory> = {
@@ -214,6 +216,7 @@ const CATEGORY_ASSIGNMENTS: Record<string, WidgetCategory> = {
   WeeklySpread: 'Organization',
   WhatAmIForgetting: 'Productivity',
   WordProcessor: 'Productivity',
+  Calculator: 'SmartTools',
 }
 
 Object.values(WIDGETS).forEach((widget) => {
