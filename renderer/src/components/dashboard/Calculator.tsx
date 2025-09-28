@@ -304,7 +304,7 @@ export default function Calculator() {
           </div>
         </div>
         {/* Enlarged view window with history (CALC) and canvas (GRAPH) */}
-        <div className="mb-3 h-56 rounded-lg border bg-muted p-2">
+        <div className="mb-3 h-80 rounded-lg border bg-muted p-2">
           {mode === 'calc' ? (
             <div ref={viewRef} className="h-full w-full overflow-y-auto">
               <div className="space-y-1 font-mono text-sm">

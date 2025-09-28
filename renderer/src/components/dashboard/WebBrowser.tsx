@@ -88,7 +88,6 @@ function AuroraBrowser() {
   const [inputValue, setInputValue] = useState(() => history[0])
   const [showSearch, setShowSearch] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
-  const searchToggleRef = useRef<HTMLSpanElement | null>(null)
 
   const currentUrl = history[historyIndex] ?? AURORA_DEFAULT_URL
 
@@ -99,8 +98,12 @@ function AuroraBrowser() {
   // Listen for a custom event from the window title bar to toggle search
   useEffect(() => {
     const handler = () => setShowSearch((v) => !v)
-    document.addEventListener('toggle-aurora-search', handler as EventListener)
-    return () => document.removeEventListener('toggle-aurora-search', handler as EventListener)
+    document.addEventListener("toggle-aurora-search", handler as EventListener)
+    return () =>
+      document.removeEventListener(
+        "toggle-aurora-search",
+        handler as EventListener
+      )
   }, [])
 
   const commitNavigation = (nextUrl: string) => {
@@ -120,9 +123,7 @@ function AuroraBrowser() {
     const target = normalizeUrl(raw)
     commitNavigation(target)
     const view = iframeRef.current
-    if (view) {
-      view.src = target
-    }
+    if (view) view.src = target
   }
 
   const goBack = () => {
@@ -130,9 +131,7 @@ function AuroraBrowser() {
     const nextIndex = historyIndex - 1
     setHistoryIndex(nextIndex)
     const view = iframeRef.current
-    if (view) {
-      view.src = history[nextIndex]
-    }
+    if (view) view.src = history[nextIndex]
   }
 
   const goForward = () => {
@@ -140,9 +139,7 @@ function AuroraBrowser() {
     const nextIndex = historyIndex + 1
     setHistoryIndex(nextIndex)
     const view = iframeRef.current
-    if (view) {
-      view.src = history[nextIndex]
-    }
+    if (view) view.src = history[nextIndex]
   }
 
   const reload = () => {
@@ -226,7 +223,9 @@ function AuroraBrowser() {
       </div>
       {showSearch && (
         <p className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[0.7rem] text-white/70">
-          Hint: Use quick queries like <span className="font-semibold text-white/90">"gidit productivity"</span> or paste any URL to jump directly.
+          Hint: Use quick queries like{" "}
+          <span className="font-semibold text-white/90">"gidit productivity"</span>{" "}
+          or paste any URL to jump directly.
         </p>
       )}
     </div>
@@ -375,6 +374,7 @@ export default function Desktop() {
   const [windows, setWindows] = useState<DesktopWindow[]>([])
   const [clock, setClock] = useState(() => new Date())
   const zIndexRef = useRef(40)
+
   const [resizing, setResizing] = useState<
     | null
     | {
@@ -386,23 +386,27 @@ export default function Desktop() {
         startHeight: number
       }
   >(null)
+
+  // NEW: clean offset-based dragging (no transform jump, no mouse offset)
   const [dragging, setDragging] = useState<
     | null
     | {
         appId: string
         pointerId: number
-        startX: number
-        startY: number
-        originX: number
-        originY: number
+        offsetX: number
+        offsetY: number
       }
   >(null)
+
+  // Ref to the currently dragged window DOM element
+  const draggedWindowRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(new Date()), 60_000)
     return () => window.clearInterval(timer)
   }, [])
 
+  // --- Resizing (unchanged styling/UX) ---
   useEffect(() => {
     if (!resizing) return
 
@@ -412,19 +416,13 @@ export default function Desktop() {
           if (window.appId !== resizing.appId || !window.size) return window
           const deltaX = event.clientX - resizing.startX
           const deltaY = event.clientY - resizing.startY
-          const nextWidth = Math.max(
-            BROWSER_MIN_WIDTH,
-            resizing.startWidth + deltaX,
-          )
-          const nextHeight = Math.max(
-            BROWSER_MIN_HEIGHT,
-            resizing.startHeight + deltaY,
-          )
+          const nextWidth = Math.max(BROWSER_MIN_WIDTH, resizing.startWidth + deltaX)
+          const nextHeight = Math.max(BROWSER_MIN_HEIGHT, resizing.startHeight + deltaY)
           return {
             ...window,
             size: { width: nextWidth, height: nextHeight },
           }
-        }),
+        })
       )
     }
 
@@ -442,6 +440,56 @@ export default function Desktop() {
       window.removeEventListener("pointercancel", handleUp)
     }
   }, [resizing])
+
+  // --- Dragging with absolute positioning + pointer capture (no style/markup changes) ---
+// --- Dragging with absolute positioning + pointer capture ---
+useEffect(() => {
+  if (!dragging) return
+
+  let hasMoved = false
+
+  const onMove = (event: PointerEvent) => {
+    if (!draggedWindowRef.current) return
+    const newX = event.clientX - dragging.offsetX
+    const newY = event.clientY - dragging.offsetY
+    draggedWindowRef.current.style.left = `${newX}px`
+    draggedWindowRef.current.style.top = `${newY}px`
+    hasMoved = true
+  }
+
+  const onUp = (event: PointerEvent) => {
+    if (draggedWindowRef.current) {
+      if (hasMoved) {
+        // ✅ Only commit to React state if the window was actually moved
+        const finalX = event.clientX - dragging.offsetX
+        const finalY = event.clientY - dragging.offsetY
+        setWindows((prev) =>
+          prev.map((w) =>
+            w.appId === dragging.appId
+              ? { ...w, position: { x: finalX, y: finalY } }
+              : w
+          )
+        )
+      }
+      try {
+        draggedWindowRef.current.releasePointerCapture(dragging.pointerId)
+      } catch {}
+      draggedWindowRef.current = null
+    }
+    setDragging(null)
+  }
+
+  window.addEventListener("pointermove", onMove)
+  window.addEventListener("pointerup", onUp)
+  window.addEventListener("pointercancel", onUp)
+
+  return () => {
+    window.removeEventListener("pointermove", onMove)
+    window.removeEventListener("pointerup", onUp)
+    window.removeEventListener("pointercancel", onUp)
+  }
+}, [dragging])
+
 
   const timeLabel = useMemo(() => formatTime(clock), [clock])
   const dateLabel = useMemo(() => formatDate(clock), [clock])
@@ -464,16 +512,14 @@ export default function Desktop() {
       const nextZ = getNextZIndex()
       const position = getInitialPosition(prev.length)
       const app = DESKTOP_APPS.find((item) => item.id === appId)
-      const size =
-        app && app.id === "browser"
-          ? { width: 560, height: 520 }
-          : undefined
+      const size = app && app.id === "browser" ? { width: 560, height: 520 } : undefined
 
       return [
         ...prev,
         {
           appId,
           minimized: false,
+          maximized: false,
           position,
           size,
           zIndex: nextZ,
@@ -484,9 +530,7 @@ export default function Desktop() {
 
   const toggleMinimize = useCallback((appId: string) => {
     setWindows((prev) =>
-      prev.map((w) =>
-        w.appId === appId ? { ...w, minimized: !w.minimized } : w
-      )
+      prev.map((w) => (w.appId === appId ? { ...w, minimized: !w.minimized } : w))
     )
   }, [])
 
@@ -521,55 +565,52 @@ export default function Desktop() {
     (appId: string) => {
       const nextZ = getNextZIndex()
       setWindows((prev) =>
-        prev.map((w) =>
-          w.appId === appId ? { ...w, minimized: false, zIndex: nextZ } : w
-        )
+        prev.map((w) => (w.appId === appId ? { ...w, minimized: false, zIndex: nextZ } : w))
       )
     },
     [getNextZIndex]
   )
 
-  const handleDragPointerDown = useCallback(
-    (appId: string) => (event: ReactPointerEvent<HTMLDivElement>) => {
-      const target = windows.find((w) => w.appId === appId)
-      if (!target) return
-      setDragging({
-        appId,
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        originX: target.position.x,
-        originY: target.position.y,
-      })
-    },
-    [windows]
-  )
+  // Pointer down on title bar -> start drag (no styling changes)
+const handleDragPointerDown = useCallback(
+  (appId: string) => (event: ReactPointerEvent<HTMLDivElement>) => {
+    // ✅ Prevent dragging if the click was inside a button or interactive element
+    const targetEl = event.target as HTMLElement
+    if (
+      targetEl.closest("button") ||
+      targetEl.closest("svg") ||
+      targetEl.closest("input")
+    ) {
+      return
+    }
 
-  useEffect(() => {
-    if (!dragging) return
-    const onMove = (event: PointerEvent) => {
-      setWindows((prev) =>
-        prev.map((w) => {
-          if (w.appId !== dragging.appId) return w
-          const dx = event.clientX - dragging.startX
-          const dy = event.clientY - dragging.startY
-          return {
-            ...w,
-            position: { x: dragging.originX + dx, y: dragging.originY + dy },
-          }
-        })
-      )
-    }
-    const onUp = () => setDragging(null)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-    }
-  }, [dragging])
+    event.preventDefault()
+
+    const target = windows.find((w) => w.appId === appId)
+    if (!target) return
+
+    const windowElement = event.currentTarget.parentElement as HTMLDivElement | null
+    if (!windowElement) return
+
+    const rect = windowElement.getBoundingClientRect()
+    const offsetX = event.clientX - rect.left
+    const offsetY = event.clientY - rect.top
+
+    draggedWindowRef.current = windowElement
+    try {
+      draggedWindowRef.current.setPointerCapture(event.pointerId)
+    } catch {}
+
+    setDragging({
+      appId,
+      pointerId: event.pointerId,
+      offsetX,
+      offsetY,
+    })
+  },
+  [windows]
+)
+
 
   const handleResizePointerDown = useCallback(
     (appId: string) => (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -589,10 +630,7 @@ export default function Desktop() {
     [windows]
   )
 
-  const openWindowIds = useMemo(
-    () => windows.map((window) => window.appId),
-    [windows]
-  )
+  const openWindowIds = useMemo(() => windows.map((window) => window.appId), [windows])
 
   return (
     <Card className="flex h-full flex-col border-0 bg-transparent shadow-none">
@@ -609,7 +647,7 @@ export default function Desktop() {
       </CardHeader> */}
       <CardContent className="flex min-h-0 flex-1 flex-col !p-0">
         <div className="relative flex-1 overflow-hidden border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(51,145,243,0.35),_rgba(24,35,66,0.85)_40%,_rgba(2,6,23,0.95)_80%)] text-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.8)]">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20viewBox%3D%220%200%20300%20300%22%20fill%3D%22none%22xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%221%22%20fill%3D%22rgba(148,163,184,0.15)%22/%3E%3C/svg%3E')] opacity-60" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20viewBox%3D%220%200%20300%20300%22%20fill%3D%22none%22xmlns%3D%22http://www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%221%22%20fill%3D%22rgba(148,163,184,0.15)%22/%3E%3C/svg%3E')] opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-900/20 backdrop-blur-[2px]" />
 
           {/* Status bar */}
@@ -626,25 +664,6 @@ export default function Desktop() {
             <BatteryCharging className="h-4 w-4" />
           </div> */}
 
-          {/* Desktop icons */}
-          {/* <div className="pointer-events-none absolute inset-0">
-            <div className="pointer-events-auto grid gap-5 px-10 py-20 sm:w-52">
-              {DESKTOP_APPS.map((app) => (
-                <button
-                  key={app.id}
-                  type="button"
-                  onClick={() => launchApp(app.id)}
-                  className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-white/80 transition hover:border-white/30 hover:bg-white/10"
-                >
-                  <span className={cn("grid h-12 w-12 place-content-center rounded-xl bg-white/10", app.accent)}>
-                    <app.icon className="h-5 w-5" />
-                  </span>
-                  <span className="w-full truncate text-center">{app.name}</span>
-                </button>
-              ))}
-            </div>
-          </div> */}
-
           {/* Windows */}
           <div className="relative h-full w-full px-4 pb-28 pt-24 sm:px-12">
             {windows.map((window, index) => {
@@ -655,11 +674,18 @@ export default function Desktop() {
                 top: window.position.y,
                 left: window.position.x,
                 zIndex: window.zIndex,
+                // keep your smooth settle transition after drag
+                transition:
+                  dragging && dragging.appId === window.appId
+                    ? "none"
+                    : "top 0.2s ease-out, left 0.2s ease-out",
               }
               if (window.size) {
                 style.width = window.size.width
                 style.height = window.size.height
               }
+
+              const isBrowser = app.id === "browser"
 
               return (
                 <div
@@ -667,7 +693,7 @@ export default function Desktop() {
                   onMouseDown={() => focusWindow(window.appId)}
                   style={style}
                   className={cn(
-                    "absolute max-w-[90vw] overflow-hidden rounded-3xl border border-white/20 bg-white/65 text-slate-900 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.7)] backdrop-blur-xl transition-all duration-200 ease-out dark:bg-slate-950/80 dark:text-slate-100",
+                    "absolute max-w-[90vw] overflow-hidden rounded-3xl border border-white/20 bg-white/65 text-slate-900 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.7)] backdrop-blur-xl ease-out dark:bg-slate-950/80 dark:text-slate-100",
                     !window.size && "w-[360px]",
                     window.minimized && "pointer-events-none scale-95 opacity-0"
                   )}
@@ -686,13 +712,13 @@ export default function Desktop() {
                         onClick={(e) => {
                           e.stopPropagation()
                           // Toggle the Aurora search bar inline within the app content
-                          if (app.id === 'browser') {
-                            const searchToggle = document.createEvent('Event')
-                            searchToggle.initEvent('toggle-aurora-search', true, true)
+                          if (app.id === "browser") {
+                            const searchToggle = document.createEvent("Event")
+                            searchToggle.initEvent("toggle-aurora-search", true, true)
                             e.currentTarget.dispatchEvent(searchToggle)
                           }
                         }}
-                        aria-label="Open search"
+                        aria-label="Search"
                         title="Search"
                       >
                         <Search className={cn("h-4 w-4", app.accent)} />
@@ -738,6 +764,7 @@ export default function Desktop() {
                       </Button>
                     </div>
                   </div>
+
                   <div className="flex h-full flex-col bg-white/55 text-sm text-slate-700 dark:bg-slate-950/70 dark:text-slate-100">
                     <div className="flex-1 px-5 pb-6 pt-4">
                       <div className="flex h-full flex-col gap-4 overflow-hidden">
@@ -747,7 +774,8 @@ export default function Desktop() {
                       </div>
                     </div>
                   </div>
-                  {app.id === "browser" && (
+
+                  {isBrowser && (
                     <div
                       role="presentation"
                       onPointerDown={handleResizePointerDown(app.id)}
@@ -769,7 +797,9 @@ export default function Desktop() {
                   <button
                     key={`dock-${app.id}`}
                     type="button"
-                    onClick={() => (isOpen && !isMinimized ? toggleMinimize(app.id) : launchApp(app.id))}
+                    onClick={() =>
+                      isOpen && !isMinimized ? toggleMinimize(app.id) : launchApp(app.id)
+                    }
                     className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white transition hover:scale-105 hover:bg-white/20"
                     aria-label={isOpen ? `Focus ${app.name}` : `Open ${app.name}`}
                   >
@@ -785,38 +815,6 @@ export default function Desktop() {
               })}
             </div>
           </div>
-
-          {/* Quick launch strip */}
-          {/* <div className="absolute bottom-6 right-6 hidden flex-col gap-3 text-xs text-white/80 lg:flex">
-            <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="uppercase tracking-[0.4em] text-white/60">Focus preset</p>
-              <p className="mt-1 font-semibold">Deep Work • 90 min</p>
-              <p className="text-white/60">Dark theme · AI summaries · Ambient Nebula</p>
-            </div>
-            <div className="grid gap-2">
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-white"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Switch Workspace
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-white"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Jump to Builder
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-white"
-              >
-                <RotateCw className="h-4 w-4" />
-                Refresh Widgets
-              </Button>
-            </div>
-          </div> */}
         </div>
       </CardContent>
     </Card>
