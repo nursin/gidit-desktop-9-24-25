@@ -31,6 +31,7 @@ import { AppSettingsDialog } from '@/components/layout/AppSettingsDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { useSettings } from '@/store/SettingsContext'
 
 const ICON_CHOICES = [
   'LayoutDashboard',
@@ -68,6 +69,18 @@ const ICON_CHOICES = [
   'Bell',
   'Globe'
 ]
+
+const getIconSizeClass = (
+  size: 'sm' | 'md' | 'lg',
+  variant: 'default' | 'compact' | 'large' = 'default',
+) => {
+  const map: Record<typeof variant, Record<typeof size, string>> = {
+    default: { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' },
+    compact: { sm: 'h-3 w-3', md: 'h-4 w-4', lg: 'h-5 w-5' },
+    large: { sm: 'h-5 w-5', md: 'h-6 w-6', lg: 'h-7 w-7' },
+  }
+  return map[variant][size]
+}
 
 function PageNameEditor({
   page,
@@ -128,8 +141,12 @@ function PageList() {
   const iconMap = LucideIcons as unknown as Record<string, LucideIcon>
   const { state: sidebarState } = useSidebar()
   const isSidebarExpanded = sidebarState === 'expanded'
+  const { iconSize, featureFlags } = useSettings()
   const [iconPickerPageId, setIconPickerPageId] = useState<string | null>(null)
   const [iconSearch, setIconSearch] = useState('')
+  const sidebarIconClass = getIconSizeClass(iconSize)
+  const largeIconClass = getIconSizeClass(iconSize, 'large')
+  const glassSidebar = Boolean(featureFlags.glassSidebar)
   const iconPickerOpen = iconPickerPageId !== null
   const availableIconChoices = useMemo(
     () => ICON_CHOICES.filter((iconName) => iconMap[iconName]),
@@ -155,7 +172,13 @@ function PageList() {
           const IconComponent = iconMap[page.icon] ?? IconFallback
           const buttonLabel = `Open ${page.name}`
           return (
-            <SidebarMenuItem key={page.id}>
+            <SidebarMenuItem
+              key={page.id}
+              className={cn(
+                glassSidebar &&
+                  'rounded-xl border border-white/10 bg-white/35 shadow-sm shadow-white/10 backdrop-blur-sm transition-colors dark:border-slate-800/60 dark:bg-slate-900/50',
+              )}
+            >
               <Tooltip disableHoverableContent={isSidebarExpanded}>
                 <TooltipTrigger asChild>
                   <SidebarMenuButton
@@ -189,7 +212,7 @@ function PageList() {
                         }}
                         aria-label={`Change icon for ${page.name}`}
                       >
-                        <IconComponent className="h-5 w-5" />
+                        <IconComponent className={sidebarIconClass} />
                       </span>
                     ) : (
                       <div
@@ -198,7 +221,7 @@ function PageList() {
                           page.id === activePageId && 'text-foreground',
                         )}
                       >
-                        <IconComponent className="h-5 w-5" />
+                        <IconComponent className={sidebarIconClass} />
                       </div>
                     )}
                     <PageNameEditor
@@ -223,7 +246,7 @@ function PageList() {
                 }}
                 showOnHover
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className={getIconSizeClass(iconSize, 'compact')} />
               </SidebarMenuAction>
             </SidebarMenuItem>
           )
@@ -251,7 +274,7 @@ function PageList() {
                       : 'h-9 w-9',
                   )}
                 >
-                  <PlusCircle className="h-5 w-5" />
+                  <PlusCircle className={sidebarIconClass} />
                 </div>
                 {isSidebarExpanded && <span>Add Page</span>}
               </SidebarMenuButton>
@@ -300,7 +323,7 @@ function PageList() {
                         setIconPickerPageId(null)
                       }}
                     >
-                      <Icon className="h-6 w-6" />
+                      <Icon className={largeIconClass} />
                       <span className="truncate">{iconName}</span>
                     </button>
                   )
@@ -316,6 +339,8 @@ function PageList() {
 
 function WidgetCard({ widgetId }: { widgetId: string }) {
   const widget = WIDGETS[widgetId]
+  const { iconSize } = useSettings()
+  const compactIconClass = getIconSizeClass(iconSize, 'compact')
   return (
     <Card
       draggable
@@ -327,7 +352,7 @@ function WidgetCard({ widgetId }: { widgetId: string }) {
     >
       <div className="flex items-center gap-2 p-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-md border bg-muted text-muted-foreground">
-          <LayoutDashboard className="h-4 w-4" />
+          <LayoutDashboard className={compactIconClass} />
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">{widget.name}</p>
@@ -341,7 +366,10 @@ function WidgetCard({ widgetId }: { widgetId: string }) {
 function ComponentPalette() {
   const { setView, view } = useBuilderStore()
   // Palette defaults: closed (no search UI by default)
-  const [search, setSearch] = useState('')
+  const search = ''
+  const { iconSize } = useSettings()
+  const compactIconClass = getIconSizeClass(iconSize, 'compact')
+  const largeIconClass = getIconSizeClass(iconSize, 'large')
 
   const categorized = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -356,7 +384,7 @@ function ComponentPalette() {
       result[category].push(widget.id)
     })
     return result
-  }, [search])
+  }, [])
 
   const categories = useMemo(
     () =>
@@ -377,7 +405,7 @@ function ComponentPalette() {
             <AccordionItem value="templates">
               <AccordionTrigger className="text-sm font-semibold">
                 <div className="flex items-center gap-2">
-                  <LayoutTemplate className="h-4 w-4" />
+                  <LayoutTemplate className={compactIconClass} />
                   Templates
                 </div>
               </AccordionTrigger>
@@ -398,7 +426,7 @@ function ComponentPalette() {
                 <AccordionItem key={category} value={category}>
                   <AccordionTrigger className="text-sm font-semibold">
                     <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4" />
+                      <Icon className={compactIconClass} />
                       {category}
                     </div>
                   </AccordionTrigger>
@@ -431,6 +459,8 @@ function SidebarFooterMenu({
 }) {
   const { state: sidebarState } = useSidebar()
   const isSidebarExpanded = sidebarState === 'expanded'
+  const { iconSize } = useSettings()
+  const footerIconClass = getIconSizeClass(iconSize)
 
   const buttonClass = cn(
     'h-9 justify-start gap-2',
@@ -457,7 +487,7 @@ function SidebarFooterMenu({
               aria-label={!isSidebarExpanded ? 'Assistant' : undefined}
             >
               <div className={iconWrapperClass()}>
-                <Bot className="h-5 w-5" />
+                <Bot className={footerIconClass} />
               </div>
               {isSidebarExpanded && <span>Assistant</span>}
             </SidebarMenuButton>
@@ -478,7 +508,7 @@ function SidebarFooterMenu({
               aria-label={!isSidebarExpanded ? 'Settings' : undefined}
             >
               <div className={iconWrapperClass()}>
-                <Settings className="h-5 w-5" />
+                <Settings className={footerIconClass} />
               </div>
               {isSidebarExpanded && <span>Settings</span>}
             </SidebarMenuButton>
@@ -498,7 +528,7 @@ function SidebarFooterMenu({
               aria-label={!isSidebarExpanded ? 'Logout' : undefined}
             >
               <div className={iconWrapperClass()}>
-                <LogOut className="h-5 w-5" />
+                <LogOut className={footerIconClass} />
               </div>
               {isSidebarExpanded && <span>Logout</span>}
             </SidebarMenuButton>
@@ -520,9 +550,17 @@ export function BuilderSidebar() {
   const { view } = useBuilderStore()
   const { state: sidebarState } = useSidebar()
   const isSidebarExpanded = sidebarState === 'expanded'
+  const { featureFlags } = useSettings()
+  const glassSidebar = Boolean(featureFlags.glassSidebar)
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar
+      collapsible="icon"
+      className={cn(
+        glassSidebar &&
+          'supports-[backdrop-filter]:backdrop-blur-2xl bg-white/45 text-foreground shadow-[0_25px_70px_-45px_rgba(15,23,42,0.6)] transition-colors dark:bg-slate-950/60 dark:text-slate-100',
+      )}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem className="group/header">

@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react'
-import { ArrowDown, ArrowUp, Copy, GripVertical, Minus, Plus, Settings, X } from 'lucide-react'
+import { GripVertical, Minus, Plus, Settings, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import type { Item } from './Types'
 import { WIDGETS } from './widgets'
+import { useSettings } from '@/store/SettingsContext'
 
 const FONT_OPTIONS = [
   { value: 'font-inter', label: 'Inter' },
@@ -16,8 +17,6 @@ const FONT_OPTIONS = [
   { value: 'font-lato', label: 'Lato' },
   { value: 'font-montserrat', label: 'Montserrat' },
 ]
-
-const SIZE_OPTIONS = [1, 2, 3, 4] as const
 
 interface WidgetWrapperProps
   extends HTMLAttributes<HTMLDivElement>,
@@ -27,8 +26,6 @@ interface WidgetWrapperProps
   onSizeChange: (id: string, size: { width: number; height: number }) => void
   onNameChange: (id: string, name: string) => void
   onPropChange: (id: string, props: Record<string, unknown>) => void
-  onDuplicate?: (id: string) => void
-  onMove?: (id: string, direction: 'up' | 'down') => void
   isOverlay?: boolean
   font?: string
   theme?: 'light' | 'dark' | 'custom'
@@ -63,12 +60,12 @@ export function WidgetWrapper({
   orientation,
   className,
   style,
-  onDuplicate,
-  onMove,
   ...rest
 }: WidgetWrapperProps) {
   const widget = WIDGETS[widgetId]
   const displayName = name ?? widget?.name ?? 'Widget'
+  const { featureFlags } = useSettings()
+  const glassWidgets = Boolean(featureFlags.glassWidgets)
 
   const renderCustomSettings = () => {
     if (widgetId !== 'NavigationBar') return null
@@ -101,6 +98,11 @@ export function WidgetWrapper({
         }
       : {}
 
+  const combinedStyle = {
+    ...style,
+    ...themeStyle,
+  }
+
   return (
     <div
       className={cn(
@@ -108,9 +110,11 @@ export function WidgetWrapper({
         themeClasses[theme],
         font,
         isOverlay && theme === 'light' && 'bg-card',
+        glassWidgets &&
+          'border-white/30 bg-white/30 text-slate-800 shadow-[0_25px_60px_-45px_rgba(15,23,42,0.45)] supports-[backdrop-filter]:backdrop-blur-xl transition-colors dark:border-slate-800/70 dark:bg-slate-900/40 dark:text-slate-100',
         className,
       )}
-      style={themeStyle}
+      style={combinedStyle}
       {...rest}
     >
       {!isOverlay && (
@@ -118,7 +122,7 @@ export function WidgetWrapper({
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Widget settings">
-                <Settings className="h-4 w-4" />
+                <Settings className="h-[var(--app-icon-size,1.25rem)] w-[var(--app-icon-size,1.25rem)]" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 space-y-4">
@@ -256,49 +260,16 @@ export function WidgetWrapper({
             className="h-7 w-7 cursor-grab"
             aria-label="Drag widget"
           >
-            <GripVertical className="h-4 w-4" />
+            <GripVertical className="h-[var(--app-icon-size,1.25rem)] w-[var(--app-icon-size,1.25rem)]" />
           </Button>
-          {onDuplicate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => onDuplicate(id)}
-              aria-label="Duplicate widget"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          )}
-          {onMove && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onMove(id, 'up')}
-                aria-label="Move widget up"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onMove(id, 'down')}
-                aria-label="Move widget down"
-              >
-                <ArrowDown className="h-4 w-4" />
-              </Button>
-            </>
-          )}
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => onRemove(id)}
-            aria-label="Remove widget"
-          >
-            <X className="h-4 w-4" />
+          onClick={() => onRemove(id)}
+          aria-label="Remove widget"
+        >
+          <X className="h-[var(--app-icon-size,1.25rem)] w-[var(--app-icon-size,1.25rem)]" />
           </Button>
         </div>
       )}

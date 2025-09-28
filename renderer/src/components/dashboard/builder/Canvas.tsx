@@ -11,8 +11,6 @@ type CanvasProps = {
   onNameChange: (id: string, name: string) => void
   onPropChange: (id: string, props: Record<string, unknown>) => void
   onDropWidget: (widgetId: string) => void
-  onDuplicateWidget?: (id: string) => void
-  onMoveWidget?: (id: string, direction: 'up' | 'down') => void
 }
 
 const CELL_HEIGHT = 160
@@ -24,8 +22,6 @@ export function Canvas({
   onNameChange,
   onPropChange,
   onDropWidget,
-  onDuplicateWidget,
-  onMoveWidget,
 }: CanvasProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
 
@@ -63,7 +59,6 @@ export function Canvas({
           style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridAutoRows: `${CELL_HEIGHT}px` }}
         >
           {items.map((item) => {
-            const supportsAdvancedActions = item.widgetId !== 'WebBrowser'
             return (
               <div
                 key={item.id}
@@ -82,8 +77,6 @@ export function Canvas({
                   onSizeChange={onSizeChange}
                   onNameChange={onNameChange}
                   onPropChange={onPropChange}
-                  onDuplicate={supportsAdvancedActions ? onDuplicateWidget : undefined}
-                  onMove={supportsAdvancedActions ? onMoveWidget : undefined}
                 >
                   {WIDGETS[item.widgetId]?.component ?? <div />}
                 </WidgetWrapper>
