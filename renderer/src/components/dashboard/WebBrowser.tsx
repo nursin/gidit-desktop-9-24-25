@@ -20,6 +20,7 @@ import {
   Globe,
   Image as ImageIcon,
   Music,
+  Plus,
   RotateCw,
   Search,
   Settings as SettingsIcon,
@@ -77,6 +78,17 @@ const normalizeUrl = (value: string) => {
   const looksLikeUrl = hasDot && !hasSpace
   if (looksLikeUrl) return `https://${trimmed}`
   return `https://duckduckgo.com/?q=${encodeURIComponent(trimmed)}`
+}
+
+const deriveTabTitle = (url: string) => {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'about:') return 'New Tab'
+    const host = parsed.hostname.replace(/^www\./i, '')
+    return host || parsed.pathname || 'New Tab'
+  } catch {
+    return url.slice(0, 24) || 'New Tab'
+  }
 }
 
 /**
@@ -223,9 +235,75 @@ export default function Desktop() {
 
   // Aurora integration (title-bar input lives here)
   const auroraRef = useRef<AuroraHandle | null>(null)
-  const [browserInput, setBrowserInput] = useState<string>("")
+  const [browserInput, setBrowserInput] = useState<string>(AURORA_DEFAULT_URL)
   const [showBrowserSearch, setShowBrowserSearch] = useState(false)
+  const [browserTabs, setBrowserTabs] = useState(() => [
+    { id: 'tab-1', title: deriveTabTitle(AURORA_DEFAULT_URL), url: AURORA_DEFAULT_URL },
+  ])
+  const [activeBrowserTab, setActiveBrowserTab] = useState('tab-1')
+  const tabCounterRef = useRef(2)
   const workspaceRef = useRef<HTMLDivElement | null>(null)
+
+  const activeBrowserTabData = useMemo(
+    () => browserTabs.find((tab) => tab.id === activeBrowserTab) ?? browserTabs[0],
+    [browserTabs, activeBrowserTab]
+  )
+
+  const focusSearchField = useCallback(() => {
+    setTimeout(() => {
+      const input = document.getElementById("aurora-toolbar-input") as HTMLInputElement | null
+      input?.focus()
+      input?.select?.()
+    }, 0)
+  }, [])
+
+  const handleBrowserUrlChange = useCallback(
+    (url: string) => {
+      setBrowserInput((showBrowserSearch && url === 'about:blank') ? '' : url)
+      setBrowserTabs((prev) =>
+        prev.map((tab) =>
+          tab.id === activeBrowserTab ? { ...tab, url, title: deriveTabTitle(url) } : tab
+        )
+      )
+    },
+    [activeBrowserTab, showBrowserSearch]
+  )
+
+  const handleSelectBrowserTab = useCallback(
+    (tabId: string) => {
+      const tab = browserTabs.find((item) => item.id === tabId)
+      if (!tab) return
+      setActiveBrowserTab(tabId)
+      setShowBrowserSearch(false)
+      setBrowserInput(tab.url)
+      auroraRef.current?.navigateTo(tab.url)
+    },
+    [browserTabs]
+  )
+
+  const handleAddBrowserTab = useCallback(() => {
+    const newId = `tab-${tabCounterRef.current++}`
+    const blankUrl = 'about:blank'
+    const newTab = { id: newId, title: 'New Tab', url: blankUrl }
+    setBrowserTabs((prev) => [...prev, newTab])
+    setActiveBrowserTab(newId)
+    setBrowserInput('')
+    setShowBrowserSearch(true)
+    focusSearchField()
+    auroraRef.current?.navigateTo(blankUrl)
+  }, [focusSearchField])
+
+  const handleToggleSearch = useCallback(() => {
+    if (!showBrowserSearch) {
+      setBrowserInput(activeBrowserTabData?.url ?? '')
+      setShowBrowserSearch(true)
+      focusSearchField()
+      return
+    }
+
+    setShowBrowserSearch(false)
+    setBrowserInput(activeBrowserTabData?.url ?? '')
+  }, [showBrowserSearch, activeBrowserTabData, focusSearchField])
 
   const [dragging, setDragging] = useState<null | {
     appId: string
@@ -413,7 +491,7 @@ export default function Desktop() {
           content: (
             <AuroraBrowser
               ref={auroraRef}
-              onUrlChange={(url) => setBrowserInput(url)}
+              onUrlChange={handleBrowserUrlChange}
             />
           ),
         }
@@ -444,11 +522,12 @@ export default function Desktop() {
       }
       return { ...base, content: null }
     })
-  }, [])
+  }, [handleBrowserUrlChange])
 
   const handleBrowserKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && browserInput.trim()) {
       auroraRef.current?.navigateTo(browserInput)
+      setShowBrowserSearch(false)
     }
   }
 
@@ -503,73 +582,108 @@ export default function Desktop() {
                     onPointerDown={handleDragPointerDown(app.id)}
                   >
                     <div className="flex flex-1 items-center gap-2 min-w-0">
-                      {isBrowser && (
-                        <div className="flex flex-1 items-center gap-2 min-w-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 shrink-0 text-slate-200"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              auroraRef.current?.goBack()
-                            }}
-                          >
-                            <ArrowLeft className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 shrink-0 text-slate-200"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              auroraRef.current?.goForward()
-                            }}
-                          >
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 shrink-0 text-slate-200"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              auroraRef.current?.reload()
-                            }}
-                          >
-                            <RotateCw className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn(
-                              "h-7 w-7 shrink-0 text-slate-200",
-                              showBrowserSearch && "bg-white/15"
+                      {isBrowser ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-slate-200"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                auroraRef.current?.goBack()
+                              }}
+                            >
+                              <ArrowLeft className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-slate-200"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                auroraRef.current?.goForward()
+                              }}
+                            >
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-slate-200"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                auroraRef.current?.reload()
+                              }}
+                            >
+                              <RotateCw className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          <div className="flex flex-1 items-center gap-2 min-w-0">
+                            {showBrowserSearch ? (
+                              <Input
+                                id="aurora-toolbar-input"
+                                value={browserInput}
+                                onChange={(event) => setBrowserInput(event.target.value)}
+                                onKeyDown={handleBrowserKeyDown}
+                                placeholder="Search or URL"
+                                className="h-7 flex-1 min-w-0 rounded-md border border-white/20 bg-slate-800/70 px-2 text-xs text-white placeholder:text-white/40"
+                                onClick={(event) => event.stopPropagation()}
+                              />
+                            ) : (
+                              <div className="flex flex-1 items-center gap-1 overflow-hidden">
+                                <div className="flex max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap pr-1">
+                                  {browserTabs.map((tab) => (
+                                    <button
+                                      key={tab.id}
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        handleSelectBrowserTab(tab.id)
+                                      }}
+                                      className={cn(
+                                        "flex min-w-[96px] max-w-[180px] items-center justify-center rounded-md border border-white/10 px-3 py-1 text-[0.65rem] uppercase tracking-[0.25em] text-white/60 transition hover:border-white/30 hover:text-white",
+                                        tab.id === activeBrowserTab && "border-white/40 bg-white/15 text-white"
+                                      )}
+                                    >
+                                      <span className="truncate">{tab.title}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
                             )}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setShowBrowserSearch((v) => !v)
-                              setTimeout(() => {
-                                const el = document.getElementById("aurora-toolbar-input")
-                                el?.focus()
-                                ;(el as HTMLInputElement | null)?.select?.()
-                              }, 0)
-                            }}
-                          >
-                            <Search className="h-4 w-4" />
-                          </Button>
-
-                          {showBrowserSearch && (
-                            <Input
-                              id="aurora-toolbar-input"
-                              value={browserInput}
-                              onChange={(event) => setBrowserInput(event.target.value)}
-                              onKeyDown={handleBrowserKeyDown}
-                              placeholder="Search or URL"
-                              className="h-7 flex-1 min-w-0 rounded-md border border-white/20 bg-slate-800/70 px-2 text-xs text-white placeholder:text-white/40"
-                              onClick={(event) => event.stopPropagation()}
-                            />
-                          )}
-                        </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={cn(
+                                "h-7 w-7 shrink-0 text-slate-200",
+                                showBrowserSearch && "bg-white/15"
+                              )}
+                              aria-pressed={showBrowserSearch}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleToggleSearch()
+                              }}
+                            >
+                              <Search className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-slate-200"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleAddBrowserTab()
+                              }}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="truncate text-[0.7rem] font-semibold tracking-wide">
+                          {app.name}
+                        </span>
                       )}
                     </div>
 
