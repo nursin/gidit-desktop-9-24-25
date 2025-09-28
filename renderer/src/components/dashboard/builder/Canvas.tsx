@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState, type DragEvent } from 'react'
 import { toast } from '@/hooks/useToast'
 import { Item } from './Types'
 import { WidgetWrapper } from './WidgetWrapper'
@@ -11,6 +11,7 @@ type CanvasProps = {
   onNameChange: (id: string, name: string) => void
   onPropChange: (id: string, props: Record<string, unknown>) => void
   onDropWidget: (widgetId: string) => void
+  onReorderWidget: (sourceId: string, targetId: string | null) => void
 }
 
 const CELL_HEIGHT = 160
@@ -22,8 +23,11 @@ export function Canvas({
   onNameChange,
   onPropChange,
   onDropWidget,
+  onReorderWidget,
 }: CanvasProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
 
   const handleDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
@@ -34,6 +38,37 @@ export function Canvas({
       }
     },
     [onDropWidget],
+  )
+
+  const handleWidgetDragStart = useCallback((event: DragEvent<HTMLButtonElement>, itemId: string) => {
+    event.stopPropagation()
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('application/widget-item', itemId)
+    setDraggedId(itemId)
+  }, [])
+
+  const handleWidgetDragEnter = useCallback(
+    (itemId: string) => {
+      if (itemId && itemId !== draggedId) {
+        setDragOverId(itemId)
+      }
+    },
+    [draggedId],
+  )
+
+  const finalizeWidgetDrag = useCallback(
+    (targetId: string | null, shouldReorder: boolean) => {
+      if (shouldReorder && draggedId) {
+        if (targetId && targetId !== draggedId) {
+          onReorderWidget(draggedId, targetId)
+        } else if (!targetId) {
+          onReorderWidget(draggedId, null)
+        }
+      }
+      setDraggedId(null)
+      setDragOverId(null)
+    },
+    [draggedId, onReorderWidget],
   )
 
   return (
@@ -55,7 +90,7 @@ export function Canvas({
         </div>
       ) : (
         <div
-          className="grid w-full flex-1 gap-5 p-6"
+          className="grid w-full flex-1 gap-px bg-border"
           style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridAutoRows: `${CELL_HEIGHT}px` }}
         >
           {items.map((item) => {
@@ -77,12 +112,48 @@ export function Canvas({
                   onSizeChange={onSizeChange}
                   onNameChange={onNameChange}
                   onPropChange={onPropChange}
+                  onDragStartHandle={(event) => handleWidgetDragStart(event, item.id)}
+                  onDragEnterContainer={(event) => {
+                    event.preventDefault()
+                    handleWidgetDragEnter(item.id)
+                  }}
+                  onDragOverContainer={(event) => {
+                    if (draggedId) {
+                      event.preventDefault()
+                      event.dataTransfer.dropEffect = 'move'
+                    }
+                  }}
+                  onDropContainer={(event) => {
+                    event.preventDefault()
+                    finalizeWidgetDrag(item.id, true)
+                  }}
+                  onDragEndHandle={() => finalizeWidgetDrag(dragOverId, false)}
+                  isDragTarget={dragOverId === item.id && draggedId !== item.id}
+                  isDragging={draggedId === item.id}
                 >
                   {WIDGETS[item.widgetId]?.component ?? <div />}
                 </WidgetWrapper>
               </div>
             )
           })}
+          {items.length > 0 && (
+            <div
+              style={{ gridColumn: 'span 4' }}
+              onDragOver={(event) => {
+                if (draggedId) {
+                  event.preventDefault()
+                  event.dataTransfer.dropEffect = 'move'
+                  setDragOverId(null)
+                }
+              }}
+              onDrop={(event) => {
+                if (!draggedId) return
+                event.preventDefault()
+                finalizeWidgetDrag(null, true)
+              }}
+              className="h-px bg-border"
+            />
+          )}
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+// main.ts
 import { app, BrowserWindow, nativeImage, protocol } from 'electron'
 import fs from 'fs'
 import path from 'path'
@@ -6,7 +7,7 @@ import './ipc/db.ipc.js'
 import './ipc/ai.ipc.js'
 import './ipc/sys.ipc.js'
 import '../scripts/first-run.js'
-import { startProxyServer } from './proxy.js'
+import { startProxyServer, stopProxyServer } from './proxy.js'
 
 const resolvedDir = __dirname
 
@@ -75,6 +76,7 @@ function loadAppIcon(): { image?: Electron.NativeImage; path?: string } {
 const { image: logoIcon, path: logoPath } = loadAppIcon()
 
 let mainWindow: BrowserWindow | null = null
+let proxyStarted = false
 
 async function loadRenderer(win: BrowserWindow) {
   if (VITE_DEV_SERVER_URL) {
@@ -116,11 +118,21 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('ready', async () => {
-    startProxyServer()
+    console.log('[main] ready – starting proxy…')
     protocol.registerFileProtocol('app', (request, callback) => {
       const url = request.url.slice(6)
       callback({ path: path.normalize(`${resolvedDir}/${url}`) })
     })
+
+    if (!proxyStarted) {
+      try {
+        const { port } = await startProxyServer()
+        proxyStarted = true
+        process.env.GIDIT_PROXY_PORT = String(port)
+      } catch (error) {
+        console.error('[main] failed to start proxy server', error)
+      }
+    }
 
     if (process.platform === 'darwin' && logoIcon) {
       app.dock.setIcon(logoIcon)
@@ -141,4 +153,12 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
   }
+})
+
+app.on('before-quit', () => {
+  if (!proxyStarted) return
+  proxyStarted = false
+  void stopProxyServer().catch((error) => {
+    console.warn('[main] failed to stop proxy server', error)
+  })
 })

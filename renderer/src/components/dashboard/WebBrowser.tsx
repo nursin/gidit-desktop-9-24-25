@@ -68,6 +68,10 @@ interface AuroraHandle {
 /* --------------------------- Aurora Browser --------------------------- */
 
 const AURORA_DEFAULT_URL = "https://duckduckgo.com/?q=productivity+workflow"
+const DEFAULT_PROXY_PORT = import.meta.env.VITE_PROXY_PORT ?? '3790'
+const PROXY_ORIGIN =
+  import.meta.env.VITE_PROXY_ORIGIN ?? `http://127.0.0.1:${DEFAULT_PROXY_PORT}`
+const PROXY_ENDPOINT = `${PROXY_ORIGIN}/proxy`
 
 const normalizeUrl = (value: string) => {
   const trimmed = value.trim()
@@ -102,6 +106,10 @@ const AuroraBrowser = forwardRef<AuroraHandle, { onUrlChange?: (url: string) => 
     const iframeRef = useRef<HTMLIFrameElement | null>(null)
 
     const currentUrl = history[historyIndex] ?? AURORA_DEFAULT_URL
+    const currentFrameUrl = useMemo(() => {
+      if (currentUrl.startsWith('about:')) return currentUrl
+      return `${PROXY_ENDPOINT}?url=${encodeURIComponent(currentUrl)}`
+    }, [currentUrl])
 
     useEffect(() => {
       onUrlChange?.(currentUrl)
@@ -123,21 +131,34 @@ const AuroraBrowser = forwardRef<AuroraHandle, { onUrlChange?: (url: string) => 
     const navigateTo = (raw: string) => {
       const target = normalizeUrl(raw)
       commitNavigation(target)
-      if (iframeRef.current) iframeRef.current.src = target
+      if (!iframeRef.current) return
+      if (target.startsWith('about:')) {
+        iframeRef.current.src = target
+        return
+      }
+      iframeRef.current.src = `${PROXY_ENDPOINT}?url=${encodeURIComponent(target)}`
     }
 
     const goBack = () => {
       if (historyIndex === 0) return
       const nextIndex = historyIndex - 1
       setHistoryIndex(nextIndex)
-      if (iframeRef.current) iframeRef.current.src = history[nextIndex]
+      if (!iframeRef.current) return
+      const prevUrl = history[nextIndex]
+      iframeRef.current.src = prevUrl.startsWith('about:')
+        ? prevUrl
+        : `${PROXY_ENDPOINT}?url=${encodeURIComponent(prevUrl)}`
     }
 
     const goForward = () => {
       if (historyIndex >= history.length - 1) return
       const nextIndex = historyIndex + 1
       setHistoryIndex(nextIndex)
-      if (iframeRef.current) iframeRef.current.src = history[nextIndex]
+      if (!iframeRef.current) return
+      const nextUrl = history[nextIndex]
+      iframeRef.current.src = nextUrl.startsWith('about:')
+        ? nextUrl
+        : `${PROXY_ENDPOINT}?url=${encodeURIComponent(nextUrl)}`
     }
 
     const reload = () => {
@@ -145,7 +166,10 @@ const AuroraBrowser = forwardRef<AuroraHandle, { onUrlChange?: (url: string) => 
       const url = history[historyIndex]
       iframeRef.current.src = "about:blank"
       window.setTimeout(() => {
-        if (iframeRef.current) iframeRef.current.src = url
+        if (!iframeRef.current) return
+        iframeRef.current.src = url.startsWith('about:')
+          ? url
+          : `${PROXY_ENDPOINT}?url=${encodeURIComponent(url)}`
       }, 40)
     }
 
@@ -162,7 +186,7 @@ const AuroraBrowser = forwardRef<AuroraHandle, { onUrlChange?: (url: string) => 
         <div className="flex-1 overflow-hidden bg-slate-950/40">
           <iframe
             ref={iframeRef}
-            src={currentUrl}
+            src={currentFrameUrl}
             title="Aurora Browser"
             sandbox="allow-forms allow-popups allow-scripts allow-same-origin"
             className="h-full w-full bg-white/5"

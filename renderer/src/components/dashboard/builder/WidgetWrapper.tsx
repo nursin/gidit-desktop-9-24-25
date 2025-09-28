@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'react'
+import type { DragEvent, HTMLAttributes } from 'react'
 import { GripVertical, Minus, Plus, Settings, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +33,13 @@ interface WidgetWrapperProps
   customTextColor?: string
   orientation?: string
   children: React.ReactNode
+  onDragStartHandle?: (event: DragEvent<HTMLButtonElement>) => void
+  onDragEndHandle?: () => void
+  onDragEnterContainer?: (event: DragEvent<HTMLDivElement>) => void
+  onDragOverContainer?: (event: DragEvent<HTMLDivElement>) => void
+  onDropContainer?: (event: DragEvent<HTMLDivElement>) => void
+  isDragTarget?: boolean
+  isDragging?: boolean
 }
 
 const themeClasses = {
@@ -60,6 +67,13 @@ export function WidgetWrapper({
   orientation,
   className,
   style,
+  onDragStartHandle,
+  onDragEndHandle,
+  onDragEnterContainer,
+  onDragOverContainer,
+  onDropContainer,
+  isDragTarget = false,
+  isDragging = false,
   ...rest
 }: WidgetWrapperProps) {
   const widget = WIDGETS[widgetId]
@@ -106,15 +120,28 @@ export function WidgetWrapper({
   return (
     <div
       className={cn(
-        'group relative h-full w-full overflow-hidden rounded-lg border shadow-sm',
+        'group relative h-full w-full overflow-hidden shadow-sm',
         themeClasses[theme],
         font,
         isOverlay && theme === 'light' && 'bg-card',
         glassWidgets &&
-          'border-white/30 bg-white/30 text-slate-800 shadow-[0_25px_60px_-45px_rgba(15,23,42,0.45)] supports-[backdrop-filter]:backdrop-blur-xl transition-colors dark:border-slate-800/70 dark:bg-slate-900/40 dark:text-slate-100',
+          'bg-white/30 text-slate-800 shadow-[0_25px_60px_-45px_rgba(15,23,42,0.45)] supports-[backdrop-filter]:backdrop-blur-xl transition-colors dark:bg-slate-900/40 dark:text-slate-100',
+        isDragTarget && 'ring-2 ring-primary/40',
+        isDragging && 'opacity-70',
         className,
       )}
       style={combinedStyle}
+      onDragEnter={(event) => {
+        onDragEnterContainer?.(event)
+      }}
+      onDragOver={(event) => {
+        onDragOverContainer?.(event)
+      }}
+      onDrop={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        onDropContainer?.(event)
+      }}
       {...rest}
     >
       {!isOverlay && (
@@ -259,6 +286,9 @@ export function WidgetWrapper({
             size="icon"
             className="h-7 w-7 cursor-grab"
             aria-label="Drag widget"
+            draggable={Boolean(onDragStartHandle)}
+            onDragStart={(event) => onDragStartHandle?.(event)}
+            onDragEnd={() => onDragEndHandle?.()}
           >
             <GripVertical className="h-[var(--app-icon-size,1.25rem)] w-[var(--app-icon-size,1.25rem)]" />
           </Button>

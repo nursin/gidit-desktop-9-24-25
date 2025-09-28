@@ -13,6 +13,7 @@ function BuilderLayout() {
     addWidget,
     removeWidget,
     updateWidget,
+    reorderWidget,
     applyTemplate,
     setView,
   } = useBuilderStore()
@@ -56,6 +57,7 @@ function BuilderLayout() {
               onNameChange={(id, name) => updateWidget(id, { name })}
               onPropChange={(id, props) => updateWidget(id, props)}
               onDropWidget={addWidget}
+              onReorderWidget={reorderWidget}
             />
           ) : (
             <Templates

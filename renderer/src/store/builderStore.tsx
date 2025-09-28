@@ -117,6 +117,7 @@ interface BuilderContextValue {
   updateWidget: (itemId: string, updates: Partial<Item>) => void
   duplicateWidget: (itemId: string) => Item | null
   moveWidget: (itemId: string, direction: 'up' | 'down') => void
+  reorderWidget: (sourceId: string, targetId: string | null) => void
   clearPage: () => void
   applyTemplate: (template: Template) => void
 }
@@ -292,6 +293,34 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     [getActivePage, setItems],
   )
 
+  const reorderWidget = useCallback(
+    (sourceId: string, targetId: string | null) => {
+      const activePage = getActivePage()
+      setItems(activePage.id, (items) => {
+        const fromIndex = items.findIndex((item) => item.id === sourceId)
+        if (fromIndex === -1) return items
+
+        const next = [...items]
+        const [moved] = next.splice(fromIndex, 1)
+
+        if (!targetId) {
+          next.push(moved)
+          return next
+        }
+
+        const targetIndex = next.findIndex((item) => item.id === targetId)
+        if (targetIndex === -1) {
+          next.push(moved)
+          return next
+        }
+
+        next.splice(targetIndex, 0, moved)
+        return next
+      })
+    },
+    [getActivePage, setItems],
+  )
+
   const clearPage = useCallback(() => {
     const activePage = getActivePage()
     setItems(activePage.id, () => [])
@@ -331,6 +360,7 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
       updateWidget,
       duplicateWidget,
       moveWidget,
+      reorderWidget,
       clearPage,
       applyTemplate,
     }
@@ -349,6 +379,7 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     updateWidget,
     duplicateWidget,
     moveWidget,
+    reorderWidget,
     clearPage,
     applyTemplate,
   ])

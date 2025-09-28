@@ -1,10 +1,11 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { URL } from 'node:url'
+import { Readable } from 'node:stream'
 
-const DEFAULT_PROXY_PORT = Number(process.env.GIDIT_PROXY_PORT ?? '3790')
+const DEFAULT_PORT = Number(process.env.GIDIT_PROXY_PORT ?? '3790')
 const HOST = '127.0.0.1'
 
-const HOP_BY_HOP_HEADERS = new Set([
+const HOP_BY_HOP_REQUEST_HEADERS = new Set([
   'connection',
   'keep-alive',
   'proxy-authenticate',
@@ -23,66 +24,31 @@ const STRIP_RESPONSE_HEADERS = new Set([
   'cross-origin-resource-policy',
 ])
 
-const ATTRIBUTE_REGEX = /(href|src|action|formaction|ping)=("[^"]*"|'[^']*')/gi
-const SRCSET_REGEX = /(srcset)=("[^"]*"|'[^']*')/gi
-const CSS_URL_REGEX = /url\(("[^"]*"|'[^']*'|[^)]+)\)/gi
+let server: ReturnType<typeof createServer> | null = null
 
-let serverStarted = false
-
-function proxifyUrl(value: string, baseUrl: URL, proxyOrigin: string) {
-  const trimmed = value.trim()
-  if (!trimmed || trimmed.startsWith('#')) return trimmed
-  if (/^(javascript:|data:|mailto:|tel:)/i.test(trimmed)) return trimmed
-
+function validateTarget(target: string | null): URL | null {
+  if (!target) return null
   try {
-    const resolved = new URL(trimmed, baseUrl)
-    return `${proxyOrigin}/proxy?url=${encodeURIComponent(resolved.toString())}`
-  } catch (error) {
-    console.warn('[proxy] failed to rewrite', trimmed, 'base', baseUrl.toString(), error)
-    return trimmed
+    const url = new URL(target)
+    if (!/^https?:$/i.test(url.protocol)) return null
+    return url
+  } catch {
+    return null
   }
 }
 
-function rewriteHtml(html: string, baseUrl: URL, proxyOrigin: string) {
-  let transformed = html.replace(ATTRIBUTE_REGEX, (match, attr, valueWithQuotes) => {
-    const quote = valueWithQuotes.startsWith('"') ? '"' : "'"
-    const raw = valueWithQuotes.slice(1, -1)
-    const rewritten = proxifyUrl(raw, baseUrl, proxyOrigin)
-    return `${attr}=${quote}${rewritten}${quote}`
-  })
-
-  transformed = transformed.replace(SRCSET_REGEX, (match, attr, valueWithQuotes) => {
-    const quote = valueWithQuotes.startsWith('"') ? '"' : "'"
-    const rewritten = valueWithQuotes
-      .slice(1, -1)
-      .split(',')
-      .map((candidate) => {
-        const [urlPart, descriptor] = candidate.trim().split(/\s+/)
-        const proxied = proxifyUrl(urlPart, baseUrl, proxyOrigin)
-        return descriptor ? `${proxied} ${descriptor}` : proxied
+function collectRequestBody(req: IncomingMessage): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    req
+      .on('data', (chunk) => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
       })
-      .join(', ')
-    return `${attr}=${quote}${rewritten}${quote}`
+      .on('end', () => {
+        resolve(Buffer.concat(chunks))
+      })
+      .on('error', (error) => reject(error))
   })
-
-  transformed = transformed.replace(CSS_URL_REGEX, (match, valueWithQuotes) => {
-    const hasQuotes = valueWithQuotes.startsWith('"') || valueWithQuotes.startsWith("'")
-    const quote = valueWithQuotes.startsWith('"') ? '"' : valueWithQuotes.startsWith("'") ? "'" : ''
-    const raw = hasQuotes ? valueWithQuotes.slice(1, -1) : valueWithQuotes
-    const proxied = proxifyUrl(raw, baseUrl, proxyOrigin)
-    return `url(${quote}${proxied}${quote})`
-  })
-
-  const hasBase = /<base\s/i.test(transformed)
-  if (!hasBase) {
-    const baseHref = `${proxyOrigin}/proxy?url=${encodeURIComponent(baseUrl.toString())}`
-    transformed = transformed.replace(
-      /<head(\s[^>]*)?>/i,
-      (match) => `${match}\n<base href="${baseHref}">`,
-    )
-  }
-
-  return transformed
 }
 
 function filterRequestHeaders(req: IncomingMessage, upstream: URL): Record<string, string> {
@@ -90,54 +56,32 @@ function filterRequestHeaders(req: IncomingMessage, upstream: URL): Record<strin
   for (const [key, value] of Object.entries(req.headers)) {
     if (!value) continue
     const lower = key.toLowerCase()
-    if (HOP_BY_HOP_HEADERS.has(lower)) continue
-    if (Array.isArray(value)) {
-      headers[key] = value.join(',')
-    } else {
-      headers[key] = value
-    }
+    if (HOP_BY_HOP_REQUEST_HEADERS.has(lower)) continue
+    headers[key] = Array.isArray(value) ? value.join(',') : value
   }
 
   headers['accept-encoding'] = 'identity'
   headers['host'] = upstream.host
-
-  if (headers.origin) {
-    headers.origin = upstream.origin
-  }
-
-  if (headers.referer) {
-    try {
-      const refererUrl = new URL(headers.referer)
-      if (refererUrl.origin !== upstream.origin) {
-        headers.referer = upstream.origin + '/'
-      }
-    } catch {
-      headers.referer = upstream.origin + '/'
-    }
-  }
+  if (headers.origin) headers.origin = upstream.origin
+  if (headers.referer) headers.referer = upstream.origin
 
   return headers
 }
 
-function rewriteResponseHeaders(upstreamResponse: Response, proxyOrigin: string, upstreamUrl: URL) {
+function writePreflight(res: ServerResponse) {
+  res.writeHead(204, {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  })
+  res.end()
+}
+
+function sanitizeResponseHeaders(upstream: Response): Record<string, string> {
   const headers: Record<string, string> = {}
-
-  upstreamResponse.headers.forEach((value, key) => {
+  upstream.headers.forEach((value, key) => {
     const lower = key.toLowerCase()
-    if (HOP_BY_HOP_HEADERS.has(lower) || STRIP_RESPONSE_HEADERS.has(lower)) {
-      return
-    }
-
-    if (lower === 'location') {
-      try {
-        const redirectUrl = new URL(value, upstreamUrl)
-        headers[key] = `${proxyOrigin}/proxy?url=${encodeURIComponent(redirectUrl.toString())}`
-        return
-      } catch {
-        // fall-through
-      }
-    }
-
+    if (HOP_BY_HOP_REQUEST_HEADERS.has(lower) || STRIP_RESPONSE_HEADERS.has(lower)) return
     headers[key] = value
   })
 
@@ -147,81 +91,60 @@ function rewriteResponseHeaders(upstreamResponse: Response, proxyOrigin: string,
   return headers
 }
 
-async function handleProxyRequest(req: IncomingMessage, res: ServerResponse, proxyOrigin: string) {
+async function handleProxy(req: IncomingMessage, res: ServerResponse, origin: string) {
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-      'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    })
-    res.end()
+    writePreflight(res)
     return
   }
 
-  const requestUrl = new URL(req.url ?? '/', proxyOrigin)
+  const requestUrl = new URL(req.url ?? '/', origin)
   if (requestUrl.pathname !== '/proxy') {
     res.writeHead(404, { 'Content-Type': 'text/plain' })
-    res.end('Proxy endpoint not found')
+    res.end('Not found')
     return
   }
 
-  const targetParam = requestUrl.searchParams.get('url')
-  if (!targetParam) {
-    res.writeHead(400, { 'Content-Type': 'text/plain' })
-    res.end('Missing url parameter')
-    return
-  }
-
-  let upstreamUrl: URL
-  try {
-    upstreamUrl = new URL(targetParam)
-  } catch (error) {
+  const upstreamUrl = validateTarget(requestUrl.searchParams.get('url'))
+  if (!upstreamUrl) {
     res.writeHead(400, { 'Content-Type': 'text/plain' })
     res.end('Invalid url parameter')
     return
   }
 
-  if (!/^https?:/i.test(upstreamUrl.protocol)) {
-    res.writeHead(400, { 'Content-Type': 'text/plain' })
-    res.end('Only http(s) protocols are supported')
-    return
-  }
-
   try {
-    const bodyChunks: Buffer[] = []
-    for await (const chunk of req) {
-      if (!chunk) continue
-      bodyChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-    }
-    const requestBody = Buffer.concat(bodyChunks)
-    const useBody = requestBody.length > 0 && req.method && !['GET', 'HEAD'].includes(req.method)
+    const body = await collectRequestBody(req)
+    const useBody = body.length > 0 && req.method && !['GET', 'HEAD'].includes(req.method)
 
     const upstreamResponse = await fetch(upstreamUrl, {
       method: req.method,
-      headers: filterRequestHeaders(req, upstreamUrl),
       redirect: 'manual',
-      body: useBody ? requestBody : undefined,
+      headers: filterRequestHeaders(req, upstreamUrl),
+      body: useBody ? body : undefined,
     })
 
-    const headers = rewriteResponseHeaders(upstreamResponse, proxyOrigin, upstreamUrl)
+    const headers = sanitizeResponseHeaders(upstreamResponse)
     const contentType = upstreamResponse.headers.get('content-type') ?? ''
-
     if (contentType.includes('text/html')) {
       const text = await upstreamResponse.text()
-      const rewritten = rewriteHtml(text, upstreamUrl, proxyOrigin)
-      headers['content-length'] = Buffer.byteLength(rewritten).toString()
-      res.writeHead(upstreamResponse.status, upstreamResponse.statusText, headers)
-      res.end(rewritten)
+      headers['content-length'] = Buffer.byteLength(text).toString()
+      res.writeHead(upstreamResponse.status, headers)
+      res.end(text)
       return
     }
 
-    const arrayBuffer = await upstreamResponse.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    if (upstreamResponse.body) {
+      const nodeStream = Readable.fromWeb(upstreamResponse.body as unknown as ReadableStream)
+      res.writeHead(upstreamResponse.status, headers)
+      nodeStream.pipe(res)
+      return
+    }
+
+    const buffer = Buffer.from(await upstreamResponse.arrayBuffer())
     headers['content-length'] = buffer.length.toString()
-    res.writeHead(upstreamResponse.status, upstreamResponse.statusText, headers)
+    res.writeHead(upstreamResponse.status, headers)
     res.end(buffer)
   } catch (error) {
-    console.error('[proxy] request failed', error)
+    console.error('[proxy] upstream request failed', error)
     res.writeHead(502, {
       'Content-Type': 'text/plain',
       'Access-Control-Allow-Origin': '*',
@@ -231,22 +154,38 @@ async function handleProxyRequest(req: IncomingMessage, res: ServerResponse, pro
   }
 }
 
-export function startProxyServer(port = DEFAULT_PROXY_PORT) {
-  if (serverStarted) {
-    return
-  }
+export async function startProxyServer(port = DEFAULT_PORT) {
+  if (server) return { port }
 
   const origin = `http://${HOST}:${port}`
-  const server = createServer((req, res) => {
-    void handleProxyRequest(req, res, origin)
+
+  server = createServer((req, res) => {
+    void handleProxy(req, res, origin)
+  })
+
+  await new Promise<void>((resolve, reject) => {
+    server?.once('error', reject)
+    server?.listen(port, HOST, () => {
+      server?.off('error', reject)
+      console.log(`[proxy] running at ${origin}`)
+      resolve()
+    })
   })
 
   server.on('error', (error) => {
     console.error('[proxy] server error', error)
   })
 
-  server.listen(port, HOST, () => {
-    serverStarted = true
-    console.log(`[proxy] running at ${origin}`)
+  return { port }
+}
+
+export async function stopProxyServer() {
+  if (!server) return
+  await new Promise<void>((resolve, reject) => {
+    server?.close((error) => {
+      if (error) reject(error)
+      else resolve()
+    })
   })
+  server = null
 }

@@ -10,6 +10,7 @@ const require$$5 = require("events");
 const require$$1 = require("os");
 const node_http = require("node:http");
 const node_url = require("node:url");
+const node_stream = require("node:stream");
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
@@ -14974,9 +14975,9 @@ async function ensureResources() {
 ensureResources().catch((err) => {
   console.error("Error in first-run:", err);
 });
-const DEFAULT_PROXY_PORT = Number(process.env.GIDIT_PROXY_PORT ?? "3790");
+const DEFAULT_PORT = Number(process.env.GIDIT_PROXY_PORT ?? "3790");
 const HOST = "127.0.0.1";
-const HOP_BY_HOP_HEADERS = /* @__PURE__ */ new Set([
+const HOP_BY_HOP_REQUEST_HEADERS = /* @__PURE__ */ new Set([
   "connection",
   "keep-alive",
   "proxy-authenticate",
@@ -14993,172 +14994,107 @@ const STRIP_RESPONSE_HEADERS = /* @__PURE__ */ new Set([
   "cross-origin-opener-policy",
   "cross-origin-resource-policy"
 ]);
-const ATTRIBUTE_REGEX = /(href|src|action|formaction|ping)=("[^"]*"|'[^']*')/gi;
-const SRCSET_REGEX = /(srcset)=("[^"]*"|'[^']*')/gi;
-const CSS_URL_REGEX = /url\(("[^"]*"|'[^']*'|[^)]+)\)/gi;
-let serverStarted = false;
-function proxifyUrl(value, baseUrl, proxyOrigin) {
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.startsWith("#")) return trimmed;
-  if (/^(javascript:|data:|mailto:|tel:)/i.test(trimmed)) return trimmed;
+let server = null;
+function validateTarget(target) {
+  if (!target) return null;
   try {
-    const resolved = new node_url.URL(trimmed, baseUrl);
-    return `${proxyOrigin}/proxy?url=${encodeURIComponent(resolved.toString())}`;
-  } catch (error2) {
-    console.warn("[proxy] failed to rewrite", trimmed, "base", baseUrl.toString(), error2);
-    return trimmed;
+    const url = new node_url.URL(target);
+    if (!/^https?:$/i.test(url.protocol)) return null;
+    return url;
+  } catch {
+    return null;
   }
 }
-function rewriteHtml(html, baseUrl, proxyOrigin) {
-  let transformed = html.replace(ATTRIBUTE_REGEX, (match, attr, valueWithQuotes) => {
-    const quote = valueWithQuotes.startsWith('"') ? '"' : "'";
-    const raw = valueWithQuotes.slice(1, -1);
-    const rewritten = proxifyUrl(raw, baseUrl, proxyOrigin);
-    return `${attr}=${quote}${rewritten}${quote}`;
+function collectRequestBody(req) {
+  return new Promise((resolve2, reject) => {
+    const chunks = [];
+    req.on("data", (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }).on("end", () => {
+      resolve2(Buffer.concat(chunks));
+    }).on("error", (error2) => reject(error2));
   });
-  transformed = transformed.replace(SRCSET_REGEX, (match, attr, valueWithQuotes) => {
-    const quote = valueWithQuotes.startsWith('"') ? '"' : "'";
-    const rewritten = valueWithQuotes.slice(1, -1).split(",").map((candidate) => {
-      const [urlPart, descriptor] = candidate.trim().split(/\s+/);
-      const proxied = proxifyUrl(urlPart, baseUrl, proxyOrigin);
-      return descriptor ? `${proxied} ${descriptor}` : proxied;
-    }).join(", ");
-    return `${attr}=${quote}${rewritten}${quote}`;
-  });
-  transformed = transformed.replace(CSS_URL_REGEX, (match, valueWithQuotes) => {
-    const hasQuotes = valueWithQuotes.startsWith('"') || valueWithQuotes.startsWith("'");
-    const quote = valueWithQuotes.startsWith('"') ? '"' : valueWithQuotes.startsWith("'") ? "'" : "";
-    const raw = hasQuotes ? valueWithQuotes.slice(1, -1) : valueWithQuotes;
-    const proxied = proxifyUrl(raw, baseUrl, proxyOrigin);
-    return `url(${quote}${proxied}${quote})`;
-  });
-  const hasBase = /<base\s/i.test(transformed);
-  if (!hasBase) {
-    const baseHref = `${proxyOrigin}/proxy?url=${encodeURIComponent(baseUrl.toString())}`;
-    transformed = transformed.replace(
-      /<head(\s[^>]*)?>/i,
-      (match) => `${match}
-<base href="${baseHref}">`
-    );
-  }
-  return transformed;
 }
 function filterRequestHeaders(req, upstream) {
   const headers = {};
   for (const [key, value] of Object.entries(req.headers)) {
     if (!value) continue;
     const lower = key.toLowerCase();
-    if (HOP_BY_HOP_HEADERS.has(lower)) continue;
-    if (Array.isArray(value)) {
-      headers[key] = value.join(",");
-    } else {
-      headers[key] = value;
-    }
+    if (HOP_BY_HOP_REQUEST_HEADERS.has(lower)) continue;
+    headers[key] = Array.isArray(value) ? value.join(",") : value;
   }
   headers["accept-encoding"] = "identity";
   headers["host"] = upstream.host;
-  if (headers.origin) {
-    headers.origin = upstream.origin;
-  }
-  if (headers.referer) {
-    try {
-      const refererUrl = new node_url.URL(headers.referer);
-      if (refererUrl.origin !== upstream.origin) {
-        headers.referer = upstream.origin + "/";
-      }
-    } catch {
-      headers.referer = upstream.origin + "/";
-    }
-  }
+  if (headers.origin) headers.origin = upstream.origin;
+  if (headers.referer) headers.referer = upstream.origin;
   return headers;
 }
-function rewriteResponseHeaders(upstreamResponse, proxyOrigin, upstreamUrl) {
+function writePreflight(res) {
+  res.writeHead(204, {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+  });
+  res.end();
+}
+function sanitizeResponseHeaders(upstream) {
   const headers = {};
-  upstreamResponse.headers.forEach((value, key) => {
+  upstream.headers.forEach((value, key) => {
     const lower = key.toLowerCase();
-    if (HOP_BY_HOP_HEADERS.has(lower) || STRIP_RESPONSE_HEADERS.has(lower)) {
-      return;
-    }
-    if (lower === "location") {
-      try {
-        const redirectUrl = new node_url.URL(value, upstreamUrl);
-        headers[key] = `${proxyOrigin}/proxy?url=${encodeURIComponent(redirectUrl.toString())}`;
-        return;
-      } catch {
-      }
-    }
+    if (HOP_BY_HOP_REQUEST_HEADERS.has(lower) || STRIP_RESPONSE_HEADERS.has(lower)) return;
     headers[key] = value;
   });
   headers["access-control-allow-origin"] = "*";
   headers["cache-control"] = "no-store";
   return headers;
 }
-async function handleProxyRequest(req, res, proxyOrigin) {
+async function handleProxy(req, res, origin) {
   if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-      "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-    });
-    res.end();
+    writePreflight(res);
     return;
   }
-  const requestUrl = new node_url.URL(req.url ?? "/", proxyOrigin);
+  const requestUrl = new node_url.URL(req.url ?? "/", origin);
   if (requestUrl.pathname !== "/proxy") {
     res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end("Proxy endpoint not found");
+    res.end("Not found");
     return;
   }
-  const targetParam = requestUrl.searchParams.get("url");
-  if (!targetParam) {
-    res.writeHead(400, { "Content-Type": "text/plain" });
-    res.end("Missing url parameter");
-    return;
-  }
-  let upstreamUrl;
-  try {
-    upstreamUrl = new node_url.URL(targetParam);
-  } catch (error2) {
+  const upstreamUrl = validateTarget(requestUrl.searchParams.get("url"));
+  if (!upstreamUrl) {
     res.writeHead(400, { "Content-Type": "text/plain" });
     res.end("Invalid url parameter");
     return;
   }
-  if (!/^https?:/i.test(upstreamUrl.protocol)) {
-    res.writeHead(400, { "Content-Type": "text/plain" });
-    res.end("Only http(s) protocols are supported");
-    return;
-  }
   try {
-    const bodyChunks = [];
-    for await (const chunk of req) {
-      if (!chunk) continue;
-      bodyChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-    const requestBody = Buffer.concat(bodyChunks);
-    const useBody = requestBody.length > 0 && req.method && !["GET", "HEAD"].includes(req.method);
+    const body = await collectRequestBody(req);
+    const useBody = body.length > 0 && req.method && !["GET", "HEAD"].includes(req.method);
     const upstreamResponse = await fetch(upstreamUrl, {
       method: req.method,
-      headers: filterRequestHeaders(req, upstreamUrl),
       redirect: "manual",
-      body: useBody ? requestBody : void 0
+      headers: filterRequestHeaders(req, upstreamUrl),
+      body: useBody ? body : void 0
     });
-    const headers = rewriteResponseHeaders(upstreamResponse, proxyOrigin, upstreamUrl);
+    const headers = sanitizeResponseHeaders(upstreamResponse);
     const contentType = upstreamResponse.headers.get("content-type") ?? "";
     if (contentType.includes("text/html")) {
       const text = await upstreamResponse.text();
-      const rewritten = rewriteHtml(text, upstreamUrl, proxyOrigin);
-      headers["content-length"] = Buffer.byteLength(rewritten).toString();
-      res.writeHead(upstreamResponse.status, upstreamResponse.statusText, headers);
-      res.end(rewritten);
+      headers["content-length"] = Buffer.byteLength(text).toString();
+      res.writeHead(upstreamResponse.status, headers);
+      res.end(text);
       return;
     }
-    const arrayBuffer = await upstreamResponse.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    if (upstreamResponse.body) {
+      const nodeStream = node_stream.Readable.fromWeb(upstreamResponse.body);
+      res.writeHead(upstreamResponse.status, headers);
+      nodeStream.pipe(res);
+      return;
+    }
+    const buffer = Buffer.from(await upstreamResponse.arrayBuffer());
     headers["content-length"] = buffer.length.toString();
-    res.writeHead(upstreamResponse.status, upstreamResponse.statusText, headers);
+    res.writeHead(upstreamResponse.status, headers);
     res.end(buffer);
   } catch (error2) {
-    console.error("[proxy] request failed", error2);
+    console.error("[proxy] upstream request failed", error2);
     res.writeHead(502, {
       "Content-Type": "text/plain",
       "Access-Control-Allow-Origin": "*",
@@ -15167,21 +15103,34 @@ async function handleProxyRequest(req, res, proxyOrigin) {
     res.end("Proxy request failed");
   }
 }
-function startProxyServer(port = DEFAULT_PROXY_PORT) {
-  if (serverStarted) {
-    return;
-  }
+async function startProxyServer(port = DEFAULT_PORT) {
+  if (server) return { port };
   const origin = `http://${HOST}:${port}`;
-  const server = node_http.createServer((req, res) => {
-    void handleProxyRequest(req, res, origin);
+  server = node_http.createServer((req, res) => {
+    void handleProxy(req, res, origin);
+  });
+  await new Promise((resolve2, reject) => {
+    server == null ? void 0 : server.once("error", reject);
+    server == null ? void 0 : server.listen(port, HOST, () => {
+      server == null ? void 0 : server.off("error", reject);
+      console.log(`[proxy] running at ${origin}`);
+      resolve2();
+    });
   });
   server.on("error", (error2) => {
     console.error("[proxy] server error", error2);
   });
-  server.listen(port, HOST, () => {
-    serverStarted = true;
-    console.log(`[proxy] running at ${origin}`);
+  return { port };
+}
+async function stopProxyServer() {
+  if (!server) return;
+  await new Promise((resolve2, reject) => {
+    server == null ? void 0 : server.close((error2) => {
+      if (error2) reject(error2);
+      else resolve2();
+    });
   });
+  server = null;
 }
 const resolvedDir = __dirname;
 require$$1$2.app.disableHardwareAcceleration();
@@ -15232,6 +15181,7 @@ function loadAppIcon() {
 }
 const { image: logoIcon, path: logoPath } = loadAppIcon();
 let mainWindow = null;
+let proxyStarted = false;
 async function loadRenderer(win) {
   if (VITE_DEV_SERVER_URL) {
     await win.loadURL(VITE_DEV_SERVER_URL);
@@ -15268,11 +15218,20 @@ if (!require$$1$2.app.requestSingleInstanceLock()) {
     mainWindow.focus();
   });
   require$$1$2.app.on("ready", async () => {
-    startProxyServer();
+    console.log("[main] ready – starting proxy…");
     require$$1$2.protocol.registerFileProtocol("app", (request, callback) => {
       const url = request.url.slice(6);
       callback({ path: path$6.normalize(`${resolvedDir}/${url}`) });
     });
+    if (!proxyStarted) {
+      try {
+        const { port } = await startProxyServer();
+        proxyStarted = true;
+        process.env.GIDIT_PROXY_PORT = String(port);
+      } catch (error2) {
+        console.error("[main] failed to start proxy server", error2);
+      }
+    }
     if (process.platform === "darwin" && logoIcon) {
       require$$1$2.app.dock.setIcon(logoIcon);
     }
@@ -15289,6 +15248,13 @@ require$$1$2.app.on("activate", () => {
   if (require$$1$2.BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+require$$1$2.app.on("before-quit", () => {
+  if (!proxyStarted) return;
+  proxyStarted = false;
+  void stopProxyServer().catch((error2) => {
+    console.warn("[main] failed to stop proxy server", error2);
+  });
 });
 exports.MAIN_DIST = MAIN_DIST;
 exports.RENDERER_DIST = RENDERER_DIST;
