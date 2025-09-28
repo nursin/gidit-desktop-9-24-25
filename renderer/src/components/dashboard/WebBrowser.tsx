@@ -211,10 +211,10 @@ const getInitialPosition = (index: number) => ({
   y: 160 + index * 28,
 })
 
-const MAXIMIZED_MARGIN_X = 100
-const MAXIMIZED_MARGIN_Y = 140
 const WINDOW_MIN_WIDTH = 420
 const WINDOW_MIN_HEIGHT = 360
+const MAXIMIZE_MARGIN_X = 24
+const MAXIMIZE_MARGIN_Y = 24
 
 export default function Desktop() {
   const [windows, setWindows] = useState<DesktopWindow[]>([])
@@ -225,6 +225,7 @@ export default function Desktop() {
   const auroraRef = useRef<AuroraHandle | null>(null)
   const [browserInput, setBrowserInput] = useState<string>("")
   const [showBrowserSearch, setShowBrowserSearch] = useState(false)
+  const workspaceRef = useRef<HTMLDivElement | null>(null)
 
   const [dragging, setDragging] = useState<null | {
     appId: string
@@ -338,14 +339,11 @@ export default function Desktop() {
           }
         }
 
-        const viewportWidth =
-          typeof window !== "undefined"
-            ? Math.max(WINDOW_MIN_WIDTH, window.innerWidth - MAXIMIZED_MARGIN_X)
-            : w.size?.width ?? WINDOW_MIN_WIDTH
-        const viewportHeight =
-          typeof window !== "undefined"
-            ? Math.max(WINDOW_MIN_HEIGHT, window.innerHeight - MAXIMIZED_MARGIN_Y)
-            : w.size?.height ?? WINDOW_MIN_HEIGHT
+        const bounds = workspaceRef.current?.getBoundingClientRect()
+        const availableWidth = bounds?.width ?? (typeof window !== 'undefined' ? window.innerWidth : WINDOW_MIN_WIDTH)
+        const availableHeight = bounds?.height ?? (typeof window !== 'undefined' ? window.innerHeight : WINDOW_MIN_HEIGHT)
+        const width = Math.max(WINDOW_MIN_WIDTH, availableWidth - MAXIMIZE_MARGIN_X * 2)
+        const height = Math.max(WINDOW_MIN_HEIGHT, availableHeight - MAXIMIZE_MARGIN_Y * 2)
 
         return {
           ...w,
@@ -354,10 +352,10 @@ export default function Desktop() {
             position: w.position,
             size: w.size,
           },
-          position: { x: 40, y: 40 },
+          position: { x: MAXIMIZE_MARGIN_X, y: MAXIMIZE_MARGIN_Y },
           size: {
-            width: viewportWidth,
-            height: viewportHeight,
+            width,
+            height,
           },
         }
       })
@@ -467,7 +465,11 @@ export default function Desktop() {
           </div>
 
           {/* Windows */}
-          <div className="relative h-full w-full px-4 pb-28 pt-24 sm:px-12">
+          <div
+            ref={workspaceRef}
+            data-aurora-workspace
+            className="relative h-full w-full px-4 pb-28 pt-24 sm:px-12"
+          >
             {windows.map((window, index) => {
               const app = DESKTOP_APPS.find((item) => item.id === window.appId)
               if (!app) return null
