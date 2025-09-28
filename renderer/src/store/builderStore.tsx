@@ -73,6 +73,18 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
         state.activePageId === action.payload.pageId ? pages[0].id : state.activePageId
       return { ...state, pages, activePageId }
     }
+    case 'REORDER_PAGES': {
+      const { fromIndex, toIndex } = action.payload
+      const pagesLength = state.pages.length
+      if (fromIndex === toIndex || fromIndex < 0 || fromIndex >= pagesLength) {
+        return state
+      }
+      const clampedToIndex = Math.min(Math.max(toIndex, 0), pagesLength - 1)
+      const pages = [...state.pages]
+      const [moved] = pages.splice(fromIndex, 1)
+      pages.splice(clampedToIndex, 0, moved)
+      return { ...state, pages }
+    }
     case 'SET_PAGE_ITEMS': {
       const pages = state.pages.map((page) =>
         page.id === action.payload.pageId ? { ...page, items: action.payload.items } : page,
@@ -99,6 +111,7 @@ type BuilderAction =
   | { type: 'ADD_PAGE'; payload?: { name?: string; page?: Page } }
   | { type: 'UPDATE_PAGE'; payload: { pageId: string; updates: Partial<Page> } }
   | { type: 'DELETE_PAGE'; payload: { pageId: string } }
+  | { type: 'REORDER_PAGES'; payload: { fromIndex: number; toIndex: number } }
   | { type: 'SET_PAGE_ITEMS'; payload: { pageId: string; items: Item[] } }
 
 interface BuilderContextValue {
@@ -112,6 +125,7 @@ interface BuilderContextValue {
   addPage: (name?: string) => string
   updatePage: (pageId: string, updates: Partial<Page>) => void
   deletePage: (pageId: string) => void
+  reorderPages: (fromIndex: number, toIndex: number) => void
   addWidget: (widgetId: string) => Item | null
   removeWidget: (itemId: string) => void
   updateWidget: (itemId: string, updates: Partial<Item>) => void
@@ -219,6 +233,10 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
 
   const deletePage = useCallback((pageId: string) => {
     dispatch({ type: 'DELETE_PAGE', payload: { pageId } })
+  }, [])
+
+  const reorderPages = useCallback((fromIndex: number, toIndex: number) => {
+    dispatch({ type: 'REORDER_PAGES', payload: { fromIndex, toIndex } })
   }, [])
 
   const addWidget = useCallback(
@@ -355,6 +373,7 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
       addPage,
       updatePage,
       deletePage,
+      reorderPages,
       addWidget,
       removeWidget,
       updateWidget,
@@ -374,6 +393,7 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     addPage,
     updatePage,
     deletePage,
+    reorderPages,
     addWidget,
     removeWidget,
     updateWidget,

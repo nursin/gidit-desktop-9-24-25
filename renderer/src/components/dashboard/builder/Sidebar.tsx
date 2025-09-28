@@ -136,7 +136,8 @@ function PageNameEditor({
 }
 
 function PageList() {
-  const { pages, activePageId, setActivePage, updatePage, deletePage, addPage } = useBuilderStore()
+  const { pages, activePageId, setActivePage, updatePage, deletePage, addPage, reorderPages } =
+    useBuilderStore()
   const IconFallback = LayoutDashboard
   const iconMap = LucideIcons as unknown as Record<string, LucideIcon>
   const { state: sidebarState } = useSidebar()
@@ -144,6 +145,8 @@ function PageList() {
   const { iconSize, featureFlags } = useSettings()
   const [iconPickerPageId, setIconPickerPageId] = useState<string | null>(null)
   const [iconSearch, setIconSearch] = useState('')
+  const [draggedPageId, setDraggedPageId] = useState<string | null>(null)
+  const [dragOverPageId, setDragOverPageId] = useState<string | null>(null)
   const sidebarIconClass = getIconSizeClass(iconSize)
   const largeIconClass = getIconSizeClass(iconSize, 'large')
   const glassSidebar = Boolean(featureFlags.glassSidebar)
@@ -165,20 +168,76 @@ function PageList() {
     }
   }, [iconPickerOpen])
 
+  const handleDragStart = (event: React.DragEvent<HTMLDivElement>, pageId: string) => {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', pageId)
+    setDraggedPageId(pageId)
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, pageId: string) => {
+    if (!draggedPageId || draggedPageId === pageId) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    setDragOverPageId(pageId)
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>, pageId: string) => {
+    event.preventDefault()
+    if (!draggedPageId || draggedPageId === pageId) {
+      handleDragEnd()
+      return
+    }
+    const fromIndex = pages.findIndex((item) => item.id === draggedPageId)
+    const toIndex = pages.findIndex((item) => item.id === pageId)
+    if (fromIndex !== -1 && toIndex !== -1) {
+      reorderPages(fromIndex, toIndex)
+    }
+    handleDragEnd()
+  }
+
+  const handleDragEnd = () => {
+    setDraggedPageId(null)
+    setDragOverPageId(null)
+  }
+
+  const handleDropToEnd = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!draggedPageId) return
+    event.preventDefault()
+    const fromIndex = pages.findIndex((item) => item.id === draggedPageId)
+    if (fromIndex !== -1) {
+      reorderPages(fromIndex, pages.length - 1)
+    }
+    handleDragEnd()
+  }
+
   return (
     <>
       <SidebarMenu>
         {pages.map((page) => {
           const IconComponent = iconMap[page.icon] ?? IconFallback
           const buttonLabel = `Open ${page.name}`
+          const isDragging = draggedPageId === page.id
+          const isDragTarget = dragOverPageId === page.id && draggedPageId !== page.id
           return (
-            <SidebarMenuItem
+            <div
               key={page.id}
+              draggable
+              onDragStart={(event) => handleDragStart(event, page.id)}
+              onDragOver={(event) => handleDragOver(event, page.id)}
+              onDrop={(event) => handleDrop(event, page.id)}
+              onDragEnd={handleDragEnd}
               className={cn(
-                glassSidebar &&
-                  'rounded-xl border border-white/10 bg-white/35 shadow-sm shadow-white/10 backdrop-blur-sm transition-colors dark:border-slate-800/60 dark:bg-slate-900/50',
+                'cursor-grab active:cursor-grabbing',
+                isDragTarget && 'ring-2 ring-primary/40',
+                isDragging && 'opacity-70',
               )}
             >
+              <SidebarMenuItem
+                className={cn(
+                  glassSidebar &&
+                    'rounded-xl border border-white/10 bg-white/35 shadow-sm shadow-white/10 backdrop-blur-sm transition-colors dark:border-slate-800/60 dark:bg-slate-900/50',
+                )}
+              >
               <Tooltip disableHoverableContent={isSidebarExpanded}>
                 <TooltipTrigger asChild>
                   <SidebarMenuButton
@@ -248,9 +307,20 @@ function PageList() {
               >
                 <Trash2 className={getIconSizeClass(iconSize, 'compact')} />
               </SidebarMenuAction>
-            </SidebarMenuItem>
+              </SidebarMenuItem>
+            </div>
           )
         })}
+        <div
+          onDragOver={(event) => {
+            if (!draggedPageId) return
+            event.preventDefault()
+            event.dataTransfer.dropEffect = 'move'
+            setDragOverPageId(null)
+          }}
+          onDrop={handleDropToEnd}
+          className="h-2"
+        />
         <SidebarMenuItem>
           <Tooltip disableHoverableContent={isSidebarExpanded}>
             <TooltipTrigger asChild>
