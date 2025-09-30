@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -174,18 +176,14 @@ export function TimersAndReminders({ name = "Timers & Reminders" }: TimersAndRem
           if (!timer.isRunning) {
             return timer;
           }
-          if (timer.timeLeft <= 0) {
-            return timer;
-          }
-          const next = timer.timeLeft - 1;
-          if (next <= 0) {
+          if (timer.timeLeft <= 1) {
             toast({
               title: "Timer finished!",
-              description: `Your timer \"${timer.name}\" is done.`,
+              description: `Your timer "${timer.name}" is done.`,
             });
             return { ...timer, timeLeft: 0, isRunning: false };
           }
-          return { ...timer, timeLeft: next };
+          return { ...timer, timeLeft: timer.timeLeft - 1 };
         }),
       );
     }, 1_000);
@@ -206,7 +204,6 @@ export function TimersAndReminders({ name = "Timers & Reminders" }: TimersAndRem
             if (reminder.repeat === "none" || reminder.dueDateTime >= now) {
               return reminder;
             }
-
             let nextDue = reminder.dueDateTime;
             while (nextDue < now) {
               nextDue = reminder.repeat === "daily" ? addDays(nextDue, 1) : addWeeks(nextDue, 1);
@@ -400,3 +397,5 @@ export function TimersAndReminders({ name = "Timers & Reminders" }: TimersAndRem
     </Card>
   );
 }
+
+export default TimersAndReminders;
